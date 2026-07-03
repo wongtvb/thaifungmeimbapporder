@@ -177,7 +177,7 @@
         await setDoc(doc(db, "restaurant", "menu"), { categories: menuData });
         renderCategories();
         if(document.getElementById('editView').classList.contains('active-view')) {
-          renderManageMenu(); // 如果在編輯頁面，自動更新管理列表
+          renderManageMenu(); 
         }
         if(currentCategoryIndex !== null && document.getElementById('itemView').classList.contains('active-view')) {
           window.openCategory(currentCategoryIndex);
@@ -239,7 +239,6 @@
       });
     }
 
-    // --- 購物車與底部選單邏輯 ---
     function handleItemClick(item) {
       if (item.options && item.options.length > 0) {
         document.getElementById('option-title').innerText = `${item.name} - 選擇選項`;
@@ -336,7 +335,6 @@
       });
     }
 
-    // --- 列印與歷史訂單 ---
     window.printAndCompleteOrder = async function() {
       if(cart.length === 0) return alert("訂單是空的！");
       
@@ -395,10 +393,13 @@
           
           const detailDiv = document.createElement('div');
           detailDiv.className = 'history-detail';
+          
+          // --- 在這裡加入了 item.id，讓歷史紀錄跟列印出來的格式一樣 ---
           data.items.forEach(item => {
-            const optText = item.option ? `(${item.option})` : '';
-            detailDiv.innerHTML += `<div style="margin-bottom:4px;">- ${item.name} ${optText}</div>`;
+            const optText = item.option ? ` (${item.option})` : '';
+            detailDiv.innerHTML += `<div style="margin-bottom:4px;">- [${item.id}] ${item.name}${optText}</div>`;
           });
+          
           if (data.note) {
             detailDiv.innerHTML += `<div class="order-note-display">📝 ${data.note}</div>`;
           }
@@ -413,7 +414,6 @@
       }
     }
 
-    // --- 新增、編輯、刪除菜單邏輯 ---
     function populateEditDropdown() {
       const select = document.getElementById('select-cat');
       select.innerHTML = '';
@@ -447,7 +447,6 @@
       saveMenuToFirebase();
     };
 
-    // 渲染管理清單
     function renderManageMenu() {
       const container = document.getElementById('manage-menu-list');
       container.innerHTML = '';
