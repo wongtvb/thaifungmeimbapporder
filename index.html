@@ -5,22 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>餐廳 POS 系統</title>
   <style>
-    /* 深藍色/黑色主題 (Dark/Blue Theme) */
+    /* 深藍色/黑色主題 */
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #0f172a; color: #f8fafc; overflow-x: hidden; }
     header { background: #1e293b; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-    header h1 { margin: 0; font-size: 1.2rem; font-weight: bold; }
+    
+    /* 讓標題變成可點擊的返回按鈕 */
+    header h1 { margin: 0; font-size: 1.2rem; font-weight: bold; cursor: pointer; color: #38bdf8; }
+    header h1:active { color: #0ea5e9; }
     
     .header-btns { display: flex; gap: 12px; align-items: center; }
     .icon-btn { background: none; border: none; color: #38bdf8; font-size: 1rem; padding: 5px; cursor: pointer; position: relative; font-weight: bold; }
     
-    /* 紅色通知點 */
+    /* 通知點 */
     .badge { position: absolute; top: -5px; right: -10px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; font-weight: bold; display: none; }
     .item-badge { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
-    .container { padding: 15px; display: none; }
+    .container { padding: 15px; display: none; padding-bottom: 80px; /* 留空間給浮動按鈕 */ }
     .active-view { display: block; }
 
-    /* 網格與卡片設計 */
+    /* 網格與卡片 */
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .card { background: #1e293b; color: #f8fafc; padding: 20px 10px; border-radius: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #334155; font-weight: bold; font-size: 1.1rem; cursor: pointer; position: relative; }
     .card:active { background: #334155; }
@@ -33,11 +36,20 @@
     .bottom-sheet h3 { margin-top: 0; color: white; text-align: center; }
     .option-btn { display: block; width: 100%; padding: 15px; margin-bottom: 10px; background: #334155; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; }
     
+    /* 右下角浮動備註按鈕 (FAB) */
+    .fab-note { position: fixed; bottom: 20px; right: 20px; background: #f59e0b; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 15; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    textarea { width: 100%; height: 100px; padding: 12px; background: #0f172a; color: white; border: 1px solid #475569; border-radius: 8px; box-sizing: border-box; font-size: 1rem; resize: none; margin-bottom: 10px; }
+
     /* 購物車與歷史訂單 */
-    .cart-item { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #334155; }
+    .list-item { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #334155; cursor: pointer; }
     .delete-btn { background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; }
     .print-btn { width: 100%; padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
     
+    /* 歷史訂單詳情展開 */
+    .history-detail { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #475569; font-size: 0.95rem; color: #cbd5e1; }
+    .history-detail.show { display: block; }
+    .order-note-display { background: #334155; padding: 8px; border-radius: 5px; margin-top: 8px; color: #fcd34d; font-size: 0.9rem; }
+
     /* 表單輸入 */
     input[type="text"], select { width: 100%; padding: 12px; margin-bottom: 10px; background: #0f172a; color: white; border: 1px solid #475569; border-radius: 5px; box-sizing: border-box; font-size: 1rem; }
     .add-btn { background: #0ea5e9; color: white; border: none; padding: 12px 15px; border-radius: 5px; width: 100%; font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; }
@@ -49,7 +61,7 @@
 <body>
 
   <header>
-    <h1 id="app-title">載入中...</h1>
+    <h1 id="app-title" onclick="window.switchView('categoryView')">🏠 菜單</h1>
     <div class="header-btns">
       <button class="icon-btn" onclick="window.switchView('editView')">編輯</button>
       <button class="icon-btn" onclick="window.switchView('historyView')">歷史</button>
@@ -69,26 +81,21 @@
   </div>
 
   <div id="cartView" class="container">
-    <button class="back-btn" onclick="window.switchView('categoryView')">← 返回菜單</button>
     <button class="print-btn" onclick="window.printAndCompleteOrder()">🖨️ 列印並完成訂單</button>
     <h2 style="margin-top:0;">目前訂單</h2>
     <div id="cart-list"></div>
   </div>
 
   <div id="historyView" class="container">
-    <button class="back-btn" onclick="window.switchView('categoryView')">← 返回</button>
     <h2>歷史訂單紀錄</h2>
     <div id="history-list"></div>
   </div>
 
   <div id="editView" class="container">
-    <button class="back-btn" onclick="window.switchView('categoryView')">← 完成編輯</button>
     <h2>新增分類</h2>
     <input type="text" id="new-cat-name" placeholder="分類名稱 (例: 飲料)">
     <button class="add-btn" onclick="window.addCategory()">新增分類</button>
-
     <hr>
-
     <h2>新增餐點至分類</h2>
     <select id="select-cat"></select>
     <input type="text" id="new-item-id" placeholder="餐點編號 (例: D01)">
@@ -97,44 +104,49 @@
     <button class="add-btn" onclick="window.addItem()">新增餐點</button>
   </div>
 
-  <div class="bottom-sheet-overlay" id="overlay" onclick="window.closeOptions()"></div>
+  <button class="fab-note" onclick="window.openNoteSheet()">📝</button>
+
+  <div class="bottom-sheet-overlay" id="overlay" onclick="window.closeSheets()"></div>
   <div class="bottom-sheet" id="bottom-sheet">
     <h3 id="option-title">選擇選項</h3>
     <div id="option-list"></div>
-    <button class="option-btn" style="background: #ef4444;" onclick="window.closeOptions()">取消</button>
+    <button class="option-btn" style="background: #ef4444;" onclick="window.closeSheets()">取消</button>
+  </div>
+
+  <div class="bottom-sheet" id="note-sheet">
+    <h3>整筆訂單備註</h3>
+    <textarea id="order-note-input" placeholder="請輸入顧客特殊要求 (例如：不要蔥、少冰...)"></textarea>
+    <button class="option-btn" style="background: #10b981;" onclick="window.saveNote()">儲存備註</button>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // ⚠️ 這裡貼上你的 Firebase Config ⚠️
+    // ⚠️ 請把這裡替換成你剛剛複製的 firebaseConfig ⚠️
     const firebaseConfig = {
       apiKey: "AIzaSyD6p84dpQqyrE62b3G9aubiI7FpDBQPQag",
       authDomain: "thaifungmei.firebaseapp.com",
       projectId: "thaifungmei",
       storageBucket: "thaifungmei.firebasestorage.app",
       messagingSenderId: "624625201929",
-      appId: "1:624625201929:web:75c9a30e5033aee4df99d8",
-      measurementId: "G-ZE5R2ZMHKH"
-};
+      appId: "1:624625201929:web:75c9a30e5033aee4df99d8"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 預設菜單 (如果資料庫是空的)
     const defaultMenu = [
       { id: 'c1', name: '主食', items: [
-        { id: 'M01', name: '炒飯', options: ['雞肉', '豬肉', '牛肉'] },
-        { id: 'M02', name: '湯麵', options: [] }
+        { id: 'M01', name: '炒飯', options: ['雞肉', '豬肉', '牛肉'] }
       ]}
     ];
 
     let menuData = [];
     let cart = [];
     let currentCategoryIndex = null;
+    let currentOrderNote = ""; // 儲存當前訂單的備註
 
-    // --- 資料載入與儲存 ---
     async function loadData() {
       try {
         const docRef = doc(db, "restaurant", "menu");
@@ -145,12 +157,11 @@
           menuData = defaultMenu;
           await saveMenuToFirebase();
         }
-        document.getElementById('app-title').innerText = '菜單';
+        document.getElementById('app-title').innerText = '🏠 菜單';
         renderCategories();
       } catch (e) {
-        alert("Firebase 連線錯誤，請檢查 Config 是否設定正確。目前使用離線模式。");
+        alert("Firebase 連線錯誤。使用離線模式。");
         menuData = defaultMenu;
-        document.getElementById('app-title').innerText = '菜單 (離線)';
         renderCategories();
       }
     }
@@ -160,19 +171,18 @@
         await setDoc(doc(db, "restaurant", "menu"), { categories: menuData });
         renderCategories();
         if(currentCategoryIndex !== null) window.openCategory(currentCategoryIndex);
-      } catch (e) {
-        console.error("Save error:", e);
-      }
+      } catch (e) { console.error("Save error:", e); }
     }
 
     // --- 畫面切換邏輯 ---
     window.switchView = function(viewId) {
       document.querySelectorAll('.container').forEach(el => el.classList.remove('active-view'));
       document.getElementById(viewId).classList.add('active-view');
+      
       if (viewId === 'cartView') renderCart();
       if (viewId === 'historyView') loadHistory();
       if (viewId === 'categoryView') {
-        document.getElementById('app-title').innerText = '菜單';
+        document.getElementById('app-title').innerText = '🏠 菜單';
         currentCategoryIndex = null;
         renderCategories();
       }
@@ -194,8 +204,7 @@
 
     window.openCategory = function(index) {
       currentCategoryIndex = index;
-      const cat = menuData[index];
-      document.getElementById('app-title').innerText = cat.name;
+      document.getElementById('app-title').innerText = '🏠 ' + menuData[index].name;
       renderItems();
       window.switchView('itemView');
     };
@@ -207,24 +216,17 @@
       grid.innerHTML = '';
       
       cat.items.forEach(item => {
-        // 計算這個品項在購物車裡有幾個
         const itemCountInCart = cart.filter(c => c.id === item.id).length;
-        
         const div = document.createElement('div');
         div.className = 'card';
         div.innerHTML = `<span class="card-id">${item.id}</span>${item.name}`;
-        
-        // 如果購物車裡有這個品項，顯示個別紅點數字
-        if (itemCountInCart > 0) {
-          div.innerHTML += `<div class="item-badge">${itemCountInCart}</div>`;
-        }
-
+        if (itemCountInCart > 0) div.innerHTML += `<div class="item-badge">${itemCountInCart}</div>`;
         div.onclick = () => handleItemClick(item);
         grid.appendChild(div);
       });
     }
 
-    // --- 點餐與購物車邏輯 ---
+    // --- 點餐選項與備註 (Bottom Sheets) ---
     function handleItemClick(item) {
       if (item.options && item.options.length > 0) {
         document.getElementById('option-title').innerText = `${item.name} - 選擇選項`;
@@ -234,7 +236,7 @@
           const btn = document.createElement('button');
           btn.className = 'option-btn';
           btn.innerText = opt;
-          btn.onclick = () => { addToCart(item, opt); window.closeOptions(); };
+          btn.onclick = () => { addToCart(item, opt); window.closeSheets(); };
           list.appendChild(btn);
         });
         document.getElementById('overlay').style.display = 'block';
@@ -244,27 +246,36 @@
       }
     }
 
-    window.closeOptions = function() {
+    window.openNoteSheet = function() {
+      document.getElementById('order-note-input').value = currentOrderNote;
+      document.getElementById('overlay').style.display = 'block';
+      setTimeout(() => document.getElementById('note-sheet').classList.add('show'), 10);
+    };
+
+    window.saveNote = function() {
+      currentOrderNote = document.getElementById('order-note-input').value;
+      window.closeSheets();
+      if(document.getElementById('cartView').classList.contains('active-view')) renderCart();
+    };
+
+    window.closeSheets = function() {
       document.getElementById('bottom-sheet').classList.remove('show');
+      document.getElementById('note-sheet').classList.remove('show');
       setTimeout(() => document.getElementById('overlay').style.display = 'none', 300);
     };
 
     function addToCart(item, option) {
-      cart.push({
-        cartId: Date.now(),
-        id: item.id,
-        name: item.name,
-        option: option
-      });
+      cart.push({ cartId: Date.now(), id: item.id, name: item.name, option: option });
       updateBadge();
-      renderItems(); // 更新個別紅點
+      renderItems();
     }
 
-    window.removeFromCart = function(cartId) {
+    window.removeFromCart = function(cartId, event) {
+      if(event) event.stopPropagation(); // 防止觸發外層點擊
       cart = cart.filter(item => item.cartId !== cartId);
       updateBadge();
       renderCart();
-      renderItems(); // 更新個別紅點
+      renderItems();
     };
 
     function updateBadge() {
@@ -276,21 +287,26 @@
     function renderCart() {
       const list = document.getElementById('cart-list');
       list.innerHTML = '';
+      
+      if (currentOrderNote) {
+        list.innerHTML += `<div class="order-note-display" style="margin-bottom: 15px;">📝 備註：${currentOrderNote}</div>`;
+      }
+
       if (cart.length === 0) {
-        list.innerHTML = '<p style="color:#94a3b8;">尚未選擇任何餐點。</p>';
+        list.innerHTML += '<p style="color:#94a3b8;">尚未選擇任何餐點。</p>';
         return;
       }
       
       cart.forEach(item => {
         const div = document.createElement('div');
-        div.className = 'cart-item';
+        div.className = 'list-item';
         const optText = item.option ? ` (${item.option})` : '';
         div.innerHTML = `
           <div>
             <span style="color:#38bdf8;">${item.id}</span> - <strong>${item.name}</strong><br>
             <small style="color:#94a3b8;">數量: 1 ${optText}</small>
           </div>
-          <button class="delete-btn" onclick="window.removeFromCart(${item.cartId})">刪除</button>
+          <button class="delete-btn" onclick="window.removeFromCart(${item.cartId}, event)">刪除</button>
         `;
         list.appendChild(div);
       });
@@ -300,30 +316,31 @@
     window.printAndCompleteOrder = async function() {
       if(cart.length === 0) return alert("訂單是空的！");
       
-      // 1. 產生列印文字
-      let printText = "=== 餐廳 POS 訂單 ===\n時間: " + new Date().toLocaleTimeString() + "\n\n";
+      // 產生短單號 (例如 4 碼英數)
+      const orderId = Math.random().toString(36).substring(2, 6).toUpperCase();
+      
+      let printText = `=== 餐廳訂單 #${orderId} ===\n時間: ${new Date().toLocaleTimeString()}\n\n`;
       cart.forEach(item => {
         const optText = item.option ? ` (${item.option})` : '';
         printText += `[${item.id}] ${item.name}${optText} x 1\n`;
       });
+      if (currentOrderNote) printText += `\n備註: ${currentOrderNote}\n`;
       printText += "\n=====================";
+      
       alert(printText); // 模擬列印
       
-      // 2. 存入歷史紀錄 (Firebase)
       try {
         await addDoc(collection(db, "orders"), {
+          orderId: orderId,
           items: cart,
+          note: currentOrderNote,
           timestamp: new Date().toISOString()
         });
-      } catch(e) {
-        console.error("寫入歷史訂單失敗", e);
-      }
+      } catch(e) { console.error("寫入歷史訂單失敗", e); }
 
-      // 3. 清空購物車
       cart = [];
+      currentOrderNote = "";
       updateBadge();
-      renderCart();
-      renderItems();
       window.switchView('categoryView');
     };
 
@@ -341,14 +358,32 @@
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           const time = new Date(data.timestamp).toLocaleString();
+          
           const div = document.createElement('div');
-          div.className = 'cart-item';
-          div.style.display = 'block'; // 覆寫 flex
-          div.innerHTML = `<div style="color:#38bdf8; font-size:0.9rem; margin-bottom:8px;">${time}</div>`;
+          div.className = 'list-item';
+          div.style.display = 'block';
+          
+          // 訂單標題 (點擊展開)
+          div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong style="color:#38bdf8; font-size:1.1rem;">單號 #${data.orderId || '舊單'}</strong>
+              <small style="color:#94a3b8;">${time}</small>
+            </div>
+          `;
+          
+          // 隱藏的詳細資訊區塊
+          const detailDiv = document.createElement('div');
+          detailDiv.className = 'history-detail';
           data.items.forEach(item => {
             const optText = item.option ? `(${item.option})` : '';
-            div.innerHTML += `<div style="margin-bottom:4px;">- ${item.name} ${optText}</div>`;
+            detailDiv.innerHTML += `<div style="margin-bottom:4px;">- ${item.name} ${optText}</div>`;
           });
+          if (data.note) {
+            detailDiv.innerHTML += `<div class="order-note-display">📝 ${data.note}</div>`;
+          }
+          
+          div.appendChild(detailDiv);
+          div.onclick = () => detailDiv.classList.toggle('show'); // 點擊展開/收合
           list.appendChild(div);
         });
       } catch (e) {
@@ -382,13 +417,9 @@
       const id = document.getElementById('new-item-id').value;
       const name = document.getElementById('new-item-name').value;
       const optionsRaw = document.getElementById('new-item-options').value;
-      
       if (!id || !name) return alert('請輸入編號與名稱');
-      
       let optionsArray = optionsRaw ? optionsRaw.split(',').map(s => s.trim()) : [];
-      
       menuData[catIndex].items.push({ id: id, name: name, options: optionsArray });
-      
       document.getElementById('new-item-id').value = '';
       document.getElementById('new-item-name').value = '';
       document.getElementById('new-item-options').value = '';
@@ -396,7 +427,6 @@
       alert('餐點已新增！');
     };
 
-    // 啟動 App
     loadData();
   </script>
 </body>
