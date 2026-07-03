@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Restaurant POS Helper</title>
+  <style>
+    /* Mobile-first Styles */
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f7; overflow-x: hidden; }
+    header { background: #007aff; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+    header h1 { margin: 0; font-size: 1.2rem; }
+    
+    .header-btns { display: flex; gap: 15px; align-items: center; }
+    .icon-btn { background: none; border: none; color: white; font-size: 1rem; padding: 5px; cursor: pointer; position: relative; font-weight: bold; }
+    
+    /* Red Notification Badge */
+    .badge { position: absolute; top: -5px; right: -10px; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; font-weight: bold; display: none; }
+    
+    .container { padding: 15px; display: none; }
+    .active-view { display: block; }
+
+    /* Grid Layouts for Categories and Items */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .card { background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+    
+    /* Bottom Sheet for Options */
+    .bottom-sheet-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; z-index: 20; }
+    .bottom-sheet { position: fixed; bottom: -100%; left: 0; right: 0; background: white; border-radius: 20px 20px 0 0; padding: 20px; transition: bottom 0.3s ease-out; z-index: 21; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+    .bottom-sheet.show { bottom: 0; }
+    .bottom-sheet h3 { margin-top: 0; }
+    .option-btn { display: block; width: 100%; padding: 15px; margin-bottom: 10px; background: #e5e5ea; border: none; border-radius: 8px; font-size: 1.1rem; }
+    
+    /* Cart / Print View */
+    .cart-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
+    .delete-btn { background: #ff3b30; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+    .print-btn { width: 100%; padding: 15px; background: #34c759; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; margin-top: 20px; }
+    
+    /* Edit Menu Forms */
+    input[type="text"] { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+    .add-btn { background: #007aff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+    .back-btn { background: #8e8e93; color: white; border: none; padding: 10px 15px; border-radius: 5px; margin-bottom: 15px; width: 100%; font-size: 1rem; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 id="app-title">Menu</h1>
+    <div class="header-btns">
+      <button class="icon-btn" onclick="switchView('editView')">Edit</button>
+      <button class="icon-btn" onclick="switchView('cartView')">
+        Order <span class="badge" id="cart-badge">0</span>
+      </button>
+    </div>
+  </header>
+
+  <div id="categoryView" class="container active-view">
+    <div class="grid" id="category-grid"></div>
+  </div>
+
+  <div id="itemView" class="container">
+    <button class="back-btn" onclick="switchView('categoryView')">← Back to Categories</button>
+    <div class="grid" id="item-grid"></div>
+  </div>
+
+  <div id="cartView" class="container">
+    <button class="back-btn" onclick="switchView('categoryView')">← Back to Menu</button>
+    <h2>Current Order</h2>
+    <div id="cart-list"></div>
+    <button class="print-btn" onclick="printOrder()">🖨️ Print to POS Format</button>
+  </div>
+
+  <div id="editView" class="container">
+    <button class="back-btn" onclick="switchView('categoryView')">← Done Editing</button>
+    <h2>Add New Category</h2>
+    <input type="text" id="new-cat-name" placeholder="Category Name (e.g. Drinks)">
+    <button class="add-btn" onclick="addCategory()">Add Category</button>
+
+    <hr style="margin: 20px 0;">
+
+    <h2>Add Item to Category</h2>
+    <select id="select-cat" style="width: 100%; padding: 12px; margin-bottom: 10px;"></select>
+    <input type="text" id="new-item-id" placeholder="Dish ID (e.g. D01)">
+    <input type="text" id="new-item-name" placeholder="Dish Name (e.g. Cola)">
+    <input type="text" id="new-item-options" placeholder="Options (comma separated, e.g. Chicken,Pork)">
+    <button class="add-btn" onclick="addItem()">Add Dish</button>
+  </div>
+
+  <div class="bottom-sheet-overlay" id="overlay" onclick="closeOptions()"></div>
+  <div class="bottom-sheet" id="bottom-sheet">
+    <h3 id="option-title">Select Option</h3>
+    <div id="option-list"></div>
+    <button class="option-btn" style="background: #ff3b30; color: white;" onclick="closeOptions()">Cancel</button>
+  </div>
+
+  <script>
+    // --- Data Management (Uses LocalStorage to save) ---
+    let defaultMenu = [
+      { id: 'c1', name: 'Mains', items: [
+        { id: 'M01', name: 'Fried Rice', options: ['Chicken', 'Pork', 'Beef'] },
+        { id: 'M02', name: 'Noodle Soup', options: [] }
+      ]},
+      { id: 'c2', name: 'Drinks', items: [
+        { id: 'D01', name: 'Cola', options: [] }
+      ]}
+    ];
+
+    // Load from local storage or use default
+    let menuData = JSON.parse(localStorage.getItem('restaurantMenu')) || defaultMenu;
+    let cart = [];
+    let currentSelectedItem = null;
+
+    function saveMenu() {
+      localStorage.setItem('restaurantMenu', JSON.stringify(menuData));
+      renderCategories();
+      populateEditDropdown();
+    }
+
+    // --- Navigation ---
+    function switchView(viewId) {
+      document.querySelectorAll('.container').forEach(el => el.classList.remove('active-view'));
+      document.getElementById(viewId).classList.add('active-view');
+      if (viewId === 'cartView') renderCart();
+      if (viewId === 'categoryView') document.getElementById('app-title').innerText = 'Menu';
+    }
+
+    // --- Rendering Logic ---
+    function renderCategories() {
+      const grid = document.getElementById('category-grid');
+      grid.innerHTML = '';
+      menuData.forEach((cat, index) => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerText = cat.name;
+        div.onclick = () => openCategory(index);
+        grid.appendChild(div);
+      });
+      populateEditDropdown();
+    }
+
+    function openCategory(index) {
+      const cat = menuData[index];
+      document.getElementById('app-title').innerText = cat.name;
+      const grid = document.getElementById('item-grid');
+      grid.innerHTML = '';
+      
+      cat.items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerText = `${item.id}\n${item.name}`;
+        div.onclick = () => handleItemClick(item);
+        grid.appendChild(div);
+      });
+      switchView('itemView');
+    }
+
+    // --- Bottom Sheet & Cart Logic ---
+    function handleItemClick(item) {
+      if (item.options && item.options.length > 0) {
+        currentSelectedItem = item;
+        document.getElementById('option-title').innerText = `Select meat for ${item.name}`;
+        const list = document.getElementById('option-list');
+        list.innerHTML = '';
+        item.options.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.innerText = opt;
+          btn.onclick = () => { addToCart(item, opt); closeOptions(); };
+          list.appendChild(btn);
+        });
+        document.getElementById('overlay').style.display = 'block';
+        setTimeout(() => document.getElementById('bottom-sheet').classList.add('show'), 10);
+      } else {
+        addToCart(item, null);
+      }
+    }
+
+    function closeOptions() {
+      document.getElementById('bottom-sheet').classList.remove('show');
+      setTimeout(() => document.getElementById('overlay').style.display = 'none', 300);
+    }
+
+    function addToCart(item, option) {
+      cart.push({
+        cartId: Date.now(), // unique ID for deletion
+        id: item.id,
+        name: item.name,
+        option: option
+      });
+      updateBadge();
+    }
+
+    function removeFromCart(cartId) {
+      cart = cart.filter(item => item.cartId !== cartId);
+      updateBadge();
+      renderCart();
+    }
+
+    function updateBadge() {
+      const badge = document.getElementById('cart-badge');
+      badge.innerText = cart.length;
+      badge.style.display = cart.length > 0 ? 'block' : 'none';
+    }
+
+    function renderCart() {
+      const list = document.getElementById('cart-list');
+      list.innerHTML = '';
+      if (cart.length === 0) list.innerHTML = '<p>No items selected.</p>';
+      
+      cart.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'cart-item';
+        const optText = item.option ? ` (${item.option})` : '';
+        div.innerHTML = `
+          <div>
+            <strong>${item.id}</strong> - ${item.name} ${optText}<br>
+            <small>Qty: 1</small>
+          </div>
+          <button class="delete-btn" onclick="removeFromCart(${item.cartId})">Delete</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function printOrder() {
+      if(cart.length === 0) return alert("Nothing to print!");
+      let printText = "--- POS ENTRY SUMMARY ---\n\n";
+      cart.forEach(item => {
+        const optText = item.option ? ` (${item.option})` : '';
+        printText += `ID: ${item.id} | ${item.name}${optText} x 1\n`;
+      });
+      alert(printText); // In a real app, this could connect to a bluetooth printer
+    }
+
+    // --- Edit Menu Logic ---
+    function populateEditDropdown() {
+      const select = document.getElementById('select-cat');
+      select.innerHTML = '';
+      menuData.forEach((cat, index) => {
+        const opt = document.createElement('option');
+        opt.value = index;
+        opt.innerText = cat.name;
+        select.appendChild(opt);
+      });
+    }
+
+    function addCategory() {
+      const name = document.getElementById('new-cat-name').value;
+      if (!name) return alert('Enter a name');
+      menuData.push({ id: 'c'+Date.now(), name: name, items: [] });
+      document.getElementById('new-cat-name').value = '';
+      saveMenu();
+      alert('Category added!');
+    }
+
+    function addItem() {
+      const catIndex = document.getElementById('select-cat').value;
+      const id = document.getElementById('new-item-id').value;
+      const name = document.getElementById('new-item-name').value;
+      const optionsRaw = document.getElementById('new-item-options').value;
+      
+      if (!id || !name) return alert('Enter ID and Name');
+      
+      let optionsArray = optionsRaw ? optionsRaw.split(',').map(s => s.trim()) : [];
+      
+      menuData[catIndex].items.push({ id: id, name: name, options: optionsArray });
+      
+      document.getElementById('new-item-id').value = '';
+      document.getElementById('new-item-name').value = '';
+      document.getElementById('new-item-options').value = '';
+      saveMenu();
+      alert('Item added!');
+    }
+
+    // Initialize App
+    renderCategories();
+  </script>
+</body>
+</html>
