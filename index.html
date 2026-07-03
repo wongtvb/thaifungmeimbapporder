@@ -20,7 +20,7 @@
     .badge { position: absolute; top: -5px; right: -10px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; font-weight: bold; display: none; }
     .item-badge { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
-    .container { padding: 15px; display: none; padding-bottom: 80px; /* 留空間給浮動按鈕 */ }
+    .container { padding: 15px; display: none; padding-bottom: 80px; }
     .active-view { display: block; }
 
     /* 網格與卡片 */
@@ -29,21 +29,23 @@
     .card:active { background: #334155; }
     .card-id { font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px; display: block; }
     
-    /* 底部彈出選單 (Bottom Sheet) */
+    /* 底部彈出選單 */
     .bottom-sheet-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; z-index: 20; }
     .bottom-sheet { position: fixed; bottom: -100%; left: 0; right: 0; background: #1e293b; border-radius: 20px 20px 0 0; padding: 20px; transition: bottom 0.3s ease-out; z-index: 21; box-shadow: 0 -2px 15px rgba(0,0,0,0.5); }
     .bottom-sheet.show { bottom: 0; }
     .bottom-sheet h3 { margin-top: 0; color: white; text-align: center; }
-    .option-btn { display: block; width: 100%; padding: 15px; margin-bottom: 10px; background: #334155; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; }
+    .option-btn { display: block; width: 100%; padding: 15px; margin-bottom: 10px; background: #334155; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
     
-    /* 右下角浮動備註按鈕 (FAB) */
+    /* 右下角浮動備註按鈕 */
     .fab-note { position: fixed; bottom: 20px; right: 20px; background: #f59e0b; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 15; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     textarea { width: 100%; height: 100px; padding: 12px; background: #0f172a; color: white; border: 1px solid #475569; border-radius: 8px; box-sizing: border-box; font-size: 1rem; resize: none; margin-bottom: 10px; }
 
-    /* 購物車與歷史訂單 */
+    /* 購物車與按鈕 */
     .list-item { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #334155; cursor: pointer; }
-    .delete-btn { background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; }
-    .print-btn { width: 100%; padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    .delete-btn { background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+    
+    .print-btn { width: 100%; padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; }
+    .clear-btn { width: 100%; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; }
     
     /* 歷史訂單詳情展開 */
     .history-detail { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #475569; font-size: 0.95rem; color: #cbd5e1; }
@@ -52,8 +54,8 @@
 
     /* 表單輸入 */
     input[type="text"], select { width: 100%; padding: 12px; margin-bottom: 10px; background: #0f172a; color: white; border: 1px solid #475569; border-radius: 5px; box-sizing: border-box; font-size: 1rem; }
-    .add-btn { background: #0ea5e9; color: white; border: none; padding: 12px 15px; border-radius: 5px; width: 100%; font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; }
-    .back-btn { background: #475569; color: white; border: none; padding: 12px 15px; border-radius: 5px; margin-bottom: 15px; width: 100%; font-size: 1rem; font-weight: bold; }
+    .add-btn { background: #0ea5e9; color: white; border: none; padding: 12px 15px; border-radius: 5px; width: 100%; font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; cursor: pointer; }
+    .back-btn { background: #475569; color: white; border: none; padding: 12px 15px; border-radius: 5px; margin-bottom: 15px; width: 100%; font-size: 1rem; font-weight: bold; cursor: pointer; }
 
     hr { border-color: #334155; }
   </style>
@@ -82,6 +84,7 @@
 
   <div id="cartView" class="container">
     <button class="print-btn" onclick="window.printAndCompleteOrder()">🖨️ 列印並完成訂單</button>
+    <button class="clear-btn" onclick="window.clearCart()">🗑️ 清空所有訂單</button>
     <h2 style="margin-top:0;">目前訂單</h2>
     <div id="cart-list"></div>
   </div>
@@ -123,7 +126,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // ⚠️ 請把這裡替換成你剛剛複製的 firebaseConfig ⚠️
     const firebaseConfig = {
       apiKey: "AIzaSyD6p84dpQqyrE62b3G9aubiI7FpDBQPQag",
       authDomain: "thaifungmei.firebaseapp.com",
@@ -145,7 +147,7 @@
     let menuData = [];
     let cart = [];
     let currentCategoryIndex = null;
-    let currentOrderNote = ""; // 儲存當前訂單的備註
+    let currentOrderNote = ""; 
 
     async function loadData() {
       try {
@@ -160,7 +162,8 @@
         document.getElementById('app-title').innerText = '🏠 菜單';
         renderCategories();
       } catch (e) {
-        alert("Firebase 連線錯誤。使用離線模式。");
+        console.error(e);
+        alert("Firebase 連線錯誤。請檢查 Firestore 資料庫是否已建立並設定為測試模式。目前使用離線模式。");
         menuData = defaultMenu;
         renderCategories();
       }
@@ -174,7 +177,6 @@
       } catch (e) { console.error("Save error:", e); }
     }
 
-    // --- 畫面切換邏輯 ---
     window.switchView = function(viewId) {
       document.querySelectorAll('.container').forEach(el => el.classList.remove('active-view'));
       document.getElementById(viewId).classList.add('active-view');
@@ -188,7 +190,6 @@
       }
     };
 
-    // --- 渲染菜單 ---
     function renderCategories() {
       const grid = document.getElementById('category-grid');
       grid.innerHTML = '';
@@ -226,7 +227,6 @@
       });
     }
 
-    // --- 點餐選項與備註 (Bottom Sheets) ---
     function handleItemClick(item) {
       if (item.options && item.options.length > 0) {
         document.getElementById('option-title').innerText = `${item.name} - 選擇選項`;
@@ -271,11 +271,23 @@
     }
 
     window.removeFromCart = function(cartId, event) {
-      if(event) event.stopPropagation(); // 防止觸發外層點擊
+      if(event) event.stopPropagation(); 
       cart = cart.filter(item => item.cartId !== cartId);
       updateBadge();
       renderCart();
       renderItems();
+    };
+
+    // --- 新增清空所有訂單邏輯 ---
+    window.clearCart = function() {
+      if (cart.length === 0) return;
+      if (confirm("確定要清空目前所有訂單與備註嗎？")) {
+        cart = [];
+        currentOrderNote = "";
+        updateBadge();
+        renderCart();
+        renderItems();
+      }
     };
 
     function updateBadge() {
@@ -312,11 +324,9 @@
       });
     }
 
-    // --- 列印與歷史訂單 ---
     window.printAndCompleteOrder = async function() {
       if(cart.length === 0) return alert("訂單是空的！");
       
-      // 產生短單號 (例如 4 碼英數)
       const orderId = Math.random().toString(36).substring(2, 6).toUpperCase();
       
       let printText = `=== 餐廳訂單 #${orderId} ===\n時間: ${new Date().toLocaleTimeString()}\n\n`;
@@ -327,7 +337,7 @@
       if (currentOrderNote) printText += `\n備註: ${currentOrderNote}\n`;
       printText += "\n=====================";
       
-      alert(printText); // 模擬列印
+      alert(printText); 
       
       try {
         await addDoc(collection(db, "orders"), {
@@ -363,7 +373,6 @@
           div.className = 'list-item';
           div.style.display = 'block';
           
-          // 訂單標題 (點擊展開)
           div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <strong style="color:#38bdf8; font-size:1.1rem;">單號 #${data.orderId || '舊單'}</strong>
@@ -371,7 +380,6 @@
             </div>
           `;
           
-          // 隱藏的詳細資訊區塊
           const detailDiv = document.createElement('div');
           detailDiv.className = 'history-detail';
           data.items.forEach(item => {
@@ -383,15 +391,15 @@
           }
           
           div.appendChild(detailDiv);
-          div.onclick = () => detailDiv.classList.toggle('show'); // 點擊展開/收合
+          div.onclick = () => detailDiv.classList.toggle('show');
           list.appendChild(div);
         });
       } catch (e) {
+        console.error(e);
         list.innerHTML = '<p>讀取失敗，請確認 Firebase 權限設定。</p>';
       }
     }
 
-    // --- 編輯菜單邏輯 ---
     function populateEditDropdown() {
       const select = document.getElementById('select-cat');
       select.innerHTML = '';
