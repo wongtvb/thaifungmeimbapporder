@@ -1,54 +1,60 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Restaurant POS Helper</title>
+  <title>餐廳 POS 系統</title>
   <style>
-    /* Mobile-first Styles */
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f7; overflow-x: hidden; }
-    header { background: #007aff; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-    header h1 { margin: 0; font-size: 1.2rem; }
+    /* 深藍色/黑色主題 (Dark/Blue Theme) */
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #0f172a; color: #f8fafc; overflow-x: hidden; }
+    header { background: #1e293b; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+    header h1 { margin: 0; font-size: 1.2rem; font-weight: bold; }
     
-    .header-btns { display: flex; gap: 15px; align-items: center; }
-    .icon-btn { background: none; border: none; color: white; font-size: 1rem; padding: 5px; cursor: pointer; position: relative; font-weight: bold; }
+    .header-btns { display: flex; gap: 12px; align-items: center; }
+    .icon-btn { background: none; border: none; color: #38bdf8; font-size: 1rem; padding: 5px; cursor: pointer; position: relative; font-weight: bold; }
     
-    /* Red Notification Badge */
-    .badge { position: absolute; top: -5px; right: -10px; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; font-weight: bold; display: none; }
-    
+    /* 紅色通知點 */
+    .badge { position: absolute; top: -5px; right: -10px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; font-weight: bold; display: none; }
+    .item-badge { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+
     .container { padding: 15px; display: none; }
     .active-view { display: block; }
 
-    /* Grid Layouts for Categories and Items */
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .card { background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+    /* 網格與卡片設計 */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card { background: #1e293b; color: #f8fafc; padding: 20px 10px; border-radius: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #334155; font-weight: bold; font-size: 1.1rem; cursor: pointer; position: relative; }
+    .card:active { background: #334155; }
+    .card-id { font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px; display: block; }
     
-    /* Bottom Sheet for Options */
-    .bottom-sheet-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; z-index: 20; }
-    .bottom-sheet { position: fixed; bottom: -100%; left: 0; right: 0; background: white; border-radius: 20px 20px 0 0; padding: 20px; transition: bottom 0.3s ease-out; z-index: 21; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+    /* 底部彈出選單 (Bottom Sheet) */
+    .bottom-sheet-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; z-index: 20; }
+    .bottom-sheet { position: fixed; bottom: -100%; left: 0; right: 0; background: #1e293b; border-radius: 20px 20px 0 0; padding: 20px; transition: bottom 0.3s ease-out; z-index: 21; box-shadow: 0 -2px 15px rgba(0,0,0,0.5); }
     .bottom-sheet.show { bottom: 0; }
-    .bottom-sheet h3 { margin-top: 0; }
-    .option-btn { display: block; width: 100%; padding: 15px; margin-bottom: 10px; background: #e5e5ea; border: none; border-radius: 8px; font-size: 1.1rem; }
+    .bottom-sheet h3 { margin-top: 0; color: white; text-align: center; }
+    .option-btn { display: block; width: 100%; padding: 15px; margin-bottom: 10px; background: #334155; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; }
     
-    /* Cart / Print View */
-    .cart-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
-    .delete-btn { background: #ff3b30; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
-    .print-btn { width: 100%; padding: 15px; background: #34c759; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; margin-top: 20px; }
+    /* 購物車與歷史訂單 */
+    .cart-item { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #334155; }
+    .delete-btn { background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; }
+    .print-btn { width: 100%; padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
     
-    /* Edit Menu Forms */
-    input[type="text"] { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-    .add-btn { background: #007aff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
-    .back-btn { background: #8e8e93; color: white; border: none; padding: 10px 15px; border-radius: 5px; margin-bottom: 15px; width: 100%; font-size: 1rem; }
+    /* 表單輸入 */
+    input[type="text"], select { width: 100%; padding: 12px; margin-bottom: 10px; background: #0f172a; color: white; border: 1px solid #475569; border-radius: 5px; box-sizing: border-box; font-size: 1rem; }
+    .add-btn { background: #0ea5e9; color: white; border: none; padding: 12px 15px; border-radius: 5px; width: 100%; font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; }
+    .back-btn { background: #475569; color: white; border: none; padding: 12px 15px; border-radius: 5px; margin-bottom: 15px; width: 100%; font-size: 1rem; font-weight: bold; }
+
+    hr { border-color: #334155; }
   </style>
 </head>
 <body>
 
   <header>
-    <h1 id="app-title">Menu</h1>
+    <h1 id="app-title">載入中...</h1>
     <div class="header-btns">
-      <button class="icon-btn" onclick="switchView('editView')">Edit</button>
-      <button class="icon-btn" onclick="switchView('cartView')">
-        Order <span class="badge" id="cart-badge">0</span>
+      <button class="icon-btn" onclick="window.switchView('editView')">編輯</button>
+      <button class="icon-btn" onclick="window.switchView('historyView')">歷史</button>
+      <button class="icon-btn" onclick="window.switchView('cartView')">
+        訂單 <span class="badge" id="cart-badge">0</span>
       </button>
     </div>
   </header>
@@ -58,72 +64,121 @@
   </div>
 
   <div id="itemView" class="container">
-    <button class="back-btn" onclick="switchView('categoryView')">← Back to Categories</button>
+    <button class="back-btn" onclick="window.switchView('categoryView')">← 返回分類</button>
     <div class="grid" id="item-grid"></div>
   </div>
 
   <div id="cartView" class="container">
-    <button class="back-btn" onclick="switchView('categoryView')">← Back to Menu</button>
-    <h2>Current Order</h2>
+    <button class="back-btn" onclick="window.switchView('categoryView')">← 返回菜單</button>
+    <button class="print-btn" onclick="window.printAndCompleteOrder()">🖨️ 列印並完成訂單</button>
+    <h2 style="margin-top:0;">目前訂單</h2>
     <div id="cart-list"></div>
-    <button class="print-btn" onclick="printOrder()">🖨️ Print to POS Format</button>
+  </div>
+
+  <div id="historyView" class="container">
+    <button class="back-btn" onclick="window.switchView('categoryView')">← 返回</button>
+    <h2>歷史訂單紀錄</h2>
+    <div id="history-list"></div>
   </div>
 
   <div id="editView" class="container">
-    <button class="back-btn" onclick="switchView('categoryView')">← Done Editing</button>
-    <h2>Add New Category</h2>
-    <input type="text" id="new-cat-name" placeholder="Category Name (e.g. Drinks)">
-    <button class="add-btn" onclick="addCategory()">Add Category</button>
+    <button class="back-btn" onclick="window.switchView('categoryView')">← 完成編輯</button>
+    <h2>新增分類</h2>
+    <input type="text" id="new-cat-name" placeholder="分類名稱 (例: 飲料)">
+    <button class="add-btn" onclick="window.addCategory()">新增分類</button>
 
-    <hr style="margin: 20px 0;">
+    <hr>
 
-    <h2>Add Item to Category</h2>
-    <select id="select-cat" style="width: 100%; padding: 12px; margin-bottom: 10px;"></select>
-    <input type="text" id="new-item-id" placeholder="Dish ID (e.g. D01)">
-    <input type="text" id="new-item-name" placeholder="Dish Name (e.g. Cola)">
-    <input type="text" id="new-item-options" placeholder="Options (comma separated, e.g. Chicken,Pork)">
-    <button class="add-btn" onclick="addItem()">Add Dish</button>
+    <h2>新增餐點至分類</h2>
+    <select id="select-cat"></select>
+    <input type="text" id="new-item-id" placeholder="餐點編號 (例: D01)">
+    <input type="text" id="new-item-name" placeholder="餐點名稱 (例: 可樂)">
+    <input type="text" id="new-item-options" placeholder="選項 (用逗號分隔, 例: 雞肉,豬肉)">
+    <button class="add-btn" onclick="window.addItem()">新增餐點</button>
   </div>
 
-  <div class="bottom-sheet-overlay" id="overlay" onclick="closeOptions()"></div>
+  <div class="bottom-sheet-overlay" id="overlay" onclick="window.closeOptions()"></div>
   <div class="bottom-sheet" id="bottom-sheet">
-    <h3 id="option-title">Select Option</h3>
+    <h3 id="option-title">選擇選項</h3>
     <div id="option-list"></div>
-    <button class="option-btn" style="background: #ff3b30; color: white;" onclick="closeOptions()">Cancel</button>
+    <button class="option-btn" style="background: #ef4444;" onclick="window.closeOptions()">取消</button>
   </div>
 
-  <script>
-    // --- Data Management (Uses LocalStorage to save) ---
-    let defaultMenu = [
-      { id: 'c1', name: 'Mains', items: [
-        { id: 'M01', name: 'Fried Rice', options: ['Chicken', 'Pork', 'Beef'] },
-        { id: 'M02', name: 'Noodle Soup', options: [] }
-      ]},
-      { id: 'c2', name: 'Drinks', items: [
-        { id: 'D01', name: 'Cola', options: [] }
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // ⚠️ 這裡貼上你的 Firebase Config ⚠️
+    const firebaseConfig = {
+      apiKey: "AIzaSyD6p84dpQqyrE62b3G9aubiI7FpDBQPQag",
+      authDomain: "thaifungmei.firebaseapp.com",
+      projectId: "thaifungmei",
+      storageBucket: "thaifungmei.firebasestorage.app",
+      messagingSenderId: "624625201929",
+      appId: "1:624625201929:web:75c9a30e5033aee4df99d8",
+      measurementId: "G-ZE5R2ZMHKH"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 預設菜單 (如果資料庫是空的)
+    const defaultMenu = [
+      { id: 'c1', name: '主食', items: [
+        { id: 'M01', name: '炒飯', options: ['雞肉', '豬肉', '牛肉'] },
+        { id: 'M02', name: '湯麵', options: [] }
       ]}
     ];
 
-    // Load from local storage or use default
-    let menuData = JSON.parse(localStorage.getItem('restaurantMenu')) || defaultMenu;
+    let menuData = [];
     let cart = [];
-    let currentSelectedItem = null;
+    let currentCategoryIndex = null;
 
-    function saveMenu() {
-      localStorage.setItem('restaurantMenu', JSON.stringify(menuData));
-      renderCategories();
-      populateEditDropdown();
+    // --- 資料載入與儲存 ---
+    async function loadData() {
+      try {
+        const docRef = doc(db, "restaurant", "menu");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          menuData = docSnap.data().categories;
+        } else {
+          menuData = defaultMenu;
+          await saveMenuToFirebase();
+        }
+        document.getElementById('app-title').innerText = '菜單';
+        renderCategories();
+      } catch (e) {
+        alert("Firebase 連線錯誤，請檢查 Config 是否設定正確。目前使用離線模式。");
+        menuData = defaultMenu;
+        document.getElementById('app-title').innerText = '菜單 (離線)';
+        renderCategories();
+      }
     }
 
-    // --- Navigation ---
-    function switchView(viewId) {
+    async function saveMenuToFirebase() {
+      try {
+        await setDoc(doc(db, "restaurant", "menu"), { categories: menuData });
+        renderCategories();
+        if(currentCategoryIndex !== null) window.openCategory(currentCategoryIndex);
+      } catch (e) {
+        console.error("Save error:", e);
+      }
+    }
+
+    // --- 畫面切換邏輯 ---
+    window.switchView = function(viewId) {
       document.querySelectorAll('.container').forEach(el => el.classList.remove('active-view'));
       document.getElementById(viewId).classList.add('active-view');
       if (viewId === 'cartView') renderCart();
-      if (viewId === 'categoryView') document.getElementById('app-title').innerText = 'Menu';
-    }
+      if (viewId === 'historyView') loadHistory();
+      if (viewId === 'categoryView') {
+        document.getElementById('app-title').innerText = '菜單';
+        currentCategoryIndex = null;
+        renderCategories();
+      }
+    };
 
-    // --- Rendering Logic ---
+    // --- 渲染菜單 ---
     function renderCategories() {
       const grid = document.getElementById('category-grid');
       grid.innerHTML = '';
@@ -131,40 +186,55 @@
         const div = document.createElement('div');
         div.className = 'card';
         div.innerText = cat.name;
-        div.onclick = () => openCategory(index);
+        div.onclick = () => window.openCategory(index);
         grid.appendChild(div);
       });
       populateEditDropdown();
     }
 
-    function openCategory(index) {
+    window.openCategory = function(index) {
+      currentCategoryIndex = index;
       const cat = menuData[index];
       document.getElementById('app-title').innerText = cat.name;
+      renderItems();
+      window.switchView('itemView');
+    };
+
+    function renderItems() {
+      if (currentCategoryIndex === null) return;
+      const cat = menuData[currentCategoryIndex];
       const grid = document.getElementById('item-grid');
       grid.innerHTML = '';
       
       cat.items.forEach(item => {
+        // 計算這個品項在購物車裡有幾個
+        const itemCountInCart = cart.filter(c => c.id === item.id).length;
+        
         const div = document.createElement('div');
         div.className = 'card';
-        div.innerText = `${item.id}\n${item.name}`;
+        div.innerHTML = `<span class="card-id">${item.id}</span>${item.name}`;
+        
+        // 如果購物車裡有這個品項，顯示個別紅點數字
+        if (itemCountInCart > 0) {
+          div.innerHTML += `<div class="item-badge">${itemCountInCart}</div>`;
+        }
+
         div.onclick = () => handleItemClick(item);
         grid.appendChild(div);
       });
-      switchView('itemView');
     }
 
-    // --- Bottom Sheet & Cart Logic ---
+    // --- 點餐與購物車邏輯 ---
     function handleItemClick(item) {
       if (item.options && item.options.length > 0) {
-        currentSelectedItem = item;
-        document.getElementById('option-title').innerText = `Select meat for ${item.name}`;
+        document.getElementById('option-title').innerText = `${item.name} - 選擇選項`;
         const list = document.getElementById('option-list');
         list.innerHTML = '';
         item.options.forEach(opt => {
           const btn = document.createElement('button');
           btn.className = 'option-btn';
           btn.innerText = opt;
-          btn.onclick = () => { addToCart(item, opt); closeOptions(); };
+          btn.onclick = () => { addToCart(item, opt); window.closeOptions(); };
           list.appendChild(btn);
         });
         document.getElementById('overlay').style.display = 'block';
@@ -174,26 +244,28 @@
       }
     }
 
-    function closeOptions() {
+    window.closeOptions = function() {
       document.getElementById('bottom-sheet').classList.remove('show');
       setTimeout(() => document.getElementById('overlay').style.display = 'none', 300);
-    }
+    };
 
     function addToCart(item, option) {
       cart.push({
-        cartId: Date.now(), // unique ID for deletion
+        cartId: Date.now(),
         id: item.id,
         name: item.name,
         option: option
       });
       updateBadge();
+      renderItems(); // 更新個別紅點
     }
 
-    function removeFromCart(cartId) {
+    window.removeFromCart = function(cartId) {
       cart = cart.filter(item => item.cartId !== cartId);
       updateBadge();
       renderCart();
-    }
+      renderItems(); // 更新個別紅點
+    };
 
     function updateBadge() {
       const badge = document.getElementById('cart-badge');
@@ -204,7 +276,10 @@
     function renderCart() {
       const list = document.getElementById('cart-list');
       list.innerHTML = '';
-      if (cart.length === 0) list.innerHTML = '<p>No items selected.</p>';
+      if (cart.length === 0) {
+        list.innerHTML = '<p style="color:#94a3b8;">尚未選擇任何餐點。</p>';
+        return;
+      }
       
       cart.forEach(item => {
         const div = document.createElement('div');
@@ -212,26 +287,76 @@
         const optText = item.option ? ` (${item.option})` : '';
         div.innerHTML = `
           <div>
-            <strong>${item.id}</strong> - ${item.name} ${optText}<br>
-            <small>Qty: 1</small>
+            <span style="color:#38bdf8;">${item.id}</span> - <strong>${item.name}</strong><br>
+            <small style="color:#94a3b8;">數量: 1 ${optText}</small>
           </div>
-          <button class="delete-btn" onclick="removeFromCart(${item.cartId})">Delete</button>
+          <button class="delete-btn" onclick="window.removeFromCart(${item.cartId})">刪除</button>
         `;
         list.appendChild(div);
       });
     }
 
-    function printOrder() {
-      if(cart.length === 0) return alert("Nothing to print!");
-      let printText = "--- POS ENTRY SUMMARY ---\n\n";
+    // --- 列印與歷史訂單 ---
+    window.printAndCompleteOrder = async function() {
+      if(cart.length === 0) return alert("訂單是空的！");
+      
+      // 1. 產生列印文字
+      let printText = "=== 餐廳 POS 訂單 ===\n時間: " + new Date().toLocaleTimeString() + "\n\n";
       cart.forEach(item => {
         const optText = item.option ? ` (${item.option})` : '';
-        printText += `ID: ${item.id} | ${item.name}${optText} x 1\n`;
+        printText += `[${item.id}] ${item.name}${optText} x 1\n`;
       });
-      alert(printText); // In a real app, this could connect to a bluetooth printer
+      printText += "\n=====================";
+      alert(printText); // 模擬列印
+      
+      // 2. 存入歷史紀錄 (Firebase)
+      try {
+        await addDoc(collection(db, "orders"), {
+          items: cart,
+          timestamp: new Date().toISOString()
+        });
+      } catch(e) {
+        console.error("寫入歷史訂單失敗", e);
+      }
+
+      // 3. 清空購物車
+      cart = [];
+      updateBadge();
+      renderCart();
+      renderItems();
+      window.switchView('categoryView');
+    };
+
+    async function loadHistory() {
+      const list = document.getElementById('history-list');
+      list.innerHTML = '<p>載入中...</p>';
+      try {
+        const q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
+        const querySnapshot = await getDocs(q);
+        list.innerHTML = '';
+        if(querySnapshot.empty) {
+          list.innerHTML = '<p style="color:#94a3b8;">目前沒有歷史訂單。</p>';
+          return;
+        }
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const time = new Date(data.timestamp).toLocaleString();
+          const div = document.createElement('div');
+          div.className = 'cart-item';
+          div.style.display = 'block'; // 覆寫 flex
+          div.innerHTML = `<div style="color:#38bdf8; font-size:0.9rem; margin-bottom:8px;">${time}</div>`;
+          data.items.forEach(item => {
+            const optText = item.option ? `(${item.option})` : '';
+            div.innerHTML += `<div style="margin-bottom:4px;">- ${item.name} ${optText}</div>`;
+          });
+          list.appendChild(div);
+        });
+      } catch (e) {
+        list.innerHTML = '<p>讀取失敗，請確認 Firebase 權限設定。</p>';
+      }
     }
 
-    // --- Edit Menu Logic ---
+    // --- 編輯菜單邏輯 ---
     function populateEditDropdown() {
       const select = document.getElementById('select-cat');
       select.innerHTML = '';
@@ -243,22 +368,22 @@
       });
     }
 
-    function addCategory() {
+    window.addCategory = function() {
       const name = document.getElementById('new-cat-name').value;
-      if (!name) return alert('Enter a name');
+      if (!name) return alert('請輸入分類名稱');
       menuData.push({ id: 'c'+Date.now(), name: name, items: [] });
       document.getElementById('new-cat-name').value = '';
-      saveMenu();
-      alert('Category added!');
-    }
+      saveMenuToFirebase();
+      alert('分類已新增！');
+    };
 
-    function addItem() {
+    window.addItem = function() {
       const catIndex = document.getElementById('select-cat').value;
       const id = document.getElementById('new-item-id').value;
       const name = document.getElementById('new-item-name').value;
       const optionsRaw = document.getElementById('new-item-options').value;
       
-      if (!id || !name) return alert('Enter ID and Name');
+      if (!id || !name) return alert('請輸入編號與名稱');
       
       let optionsArray = optionsRaw ? optionsRaw.split(',').map(s => s.trim()) : [];
       
@@ -267,12 +392,12 @@
       document.getElementById('new-item-id').value = '';
       document.getElementById('new-item-name').value = '';
       document.getElementById('new-item-options').value = '';
-      saveMenu();
-      alert('Item added!');
-    }
+      saveMenuToFirebase();
+      alert('餐點已新增！');
+    };
 
-    // Initialize App
-    renderCategories();
+    // 啟動 App
+    loadData();
   </script>
 </body>
 </html>
