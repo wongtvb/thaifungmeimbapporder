@@ -1,592 +1,1149 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>餐廳 POS 系統</title>
-  <style>
-    /* 深藍色/黑色主題 */
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #0f172a; color: #f8fafc; overflow-x: hidden; }
-    
-    /* 頂部導覽列 */
-    header { background: #1e293b; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-    header h1 { margin: 0; font-size: 1.2rem; font-weight: bold; cursor: pointer; color: #38bdf8; }
-    
-    .header-btns { display: flex; gap: 12px; align-items: center; }
-    .icon-btn { background: none; border: none; color: #38bdf8; font-size: 1rem; padding: 5px; cursor: pointer; position: relative; font-weight: bold; }
-    .badge { position: absolute; top: -5px; right: -10px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; font-weight: bold; display: none; }
-    .item-badge { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 5;}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>餐廳 POS 系統</title>
+    <style>
+        /* 深藍色/黑色主題 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
 
-    .container { padding: 0 10px 80px 10px; display: none; }
-    .active-view { display: block; }
+        header {
+            background: #1e293b;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
 
-    /* 搜尋列 */
-    .search-bar-container { position: sticky; top: 54px; background: #0f172a; padding: 10px 0; z-index: 15; }
-    #search-input { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 1.1rem; box-sizing: border-box; }
-    #search-input::placeholder { color: #94a3b8; }
+        header h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: #38bdf8;
+        }
+        header h1:active {
+            color: #0ea5e9;
+        }
 
-    /* 橫向分類滑動列 */
-    .category-scroll { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; margin-bottom: 10px; position: sticky; top: 115px; background: #0f172a; z-index: 10; scroll-behavior: smooth; }
-    .category-scroll::-webkit-scrollbar { height: 4px; }
-    .category-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-    .cat-tab { white-space: nowrap; padding: 10px 20px; background: #1e293b; color: #94a3b8; border: 1px solid #334155; border-radius: 20px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
-    .cat-tab.active { background: #0ea5e9; color: white; border-color: #0ea5e9; }
+        .header-btns {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
 
-    /* 高密度餐點網格 (自動填滿空間) */
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-    .card { background: #1e293b; color: #f8fafc; padding: 15px 5px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 1px solid #334155; font-weight: bold; font-size: 1rem; cursor: pointer; position: relative; display: flex; flex-direction: column; justify-content: center; min-height: 80px; }
-    .card:active { background: #334155; }
-    .card-id { font-size: 0.8rem; color: #38bdf8; margin-bottom: 3px; display: block; }
-    
-    /* 底部彈出選單 */
-    .bottom-sheet-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; z-index: 30; }
-    .bottom-sheet { position: fixed; bottom: -100%; left: 0; right: 0; background: #1e293b; border-radius: 20px 20px 0 0; padding: 20px; transition: bottom 0.3s ease-out; z-index: 31; box-shadow: 0 -2px 15px rgba(0,0,0,0.5); }
-    .bottom-sheet.show { bottom: 0; }
-    .bottom-sheet h3 { margin-top: 0; color: white; text-align: center; }
-    .option-btn { display: block; width: 100%; padding: 15px; margin-bottom: 10px; background: #334155; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
-    
-    /* 備註按鈕 */
-    .fab-note { position: fixed; bottom: 20px; right: 20px; background: #f59e0b; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 15; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    textarea { width: 100%; height: 100px; padding: 12px; background: #0f172a; color: white; border: 1px solid #475569; border-radius: 8px; box-sizing: border-box; font-size: 1rem; resize: none; margin-bottom: 10px; }
+        .icon-btn {
+            background: none;
+            border: none;
+            color: #38bdf8;
+            font-size: 1rem;
+            padding: 5px;
+            cursor: pointer;
+            position: relative;
+            font-weight: bold;
+        }
 
-    /* 列表樣式 */
-    .list-item { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #334155; cursor: pointer; }
-    .delete-btn { background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; }
-    
-    .print-btn { width: 100%; padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; }
-    .clear-btn { width: 100%; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; }
-    
-    .history-detail { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #475569; font-size: 0.95rem; color: #cbd5e1; }
-    .history-detail.show { display: block; }
-    .order-note-display { background: #334155; padding: 8px; border-radius: 5px; margin-top: 8px; color: #fcd34d; font-size: 0.9rem; }
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: none;
+        }
 
-    input[type="text"], select { width: 100%; padding: 12px; margin-bottom: 10px; background: #0f172a; color: white; border: 1px solid #475569; border-radius: 5px; box-sizing: border-box; font-size: 1rem; }
-    .add-btn { background: #0ea5e9; color: white; border: none; padding: 12px 15px; border-radius: 5px; width: 100%; font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; cursor: pointer; }
+        .item-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            z-index: 5;
+        }
 
-    .manage-cat-box { background: #1e293b; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #334155; }
-    .manage-cat-header { display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; font-weight: bold; color: #38bdf8; margin-bottom: 10px; }
-    .manage-item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px dashed #475569; margin-left: 15px; font-size: 0.95rem; }
-    .action-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 0 5px; }
-    hr { border-color: #334155; margin: 20px 0; }
-  </style>
+        .container {
+            padding: 0 10px 80px 10px;
+            display: none;
+        }
+
+        .active-view {
+            display: block;
+        }
+
+        /* 分類總覽頁面網格 */
+        .category-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            padding-top: 10px;
+        }
+
+        .cat-card {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 28px 16px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            border: 2px solid #334155;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .cat-card:active {
+            background: #334155;
+            border-color: #0ea5e9;
+            transform: scale(0.97);
+        }
+        .cat-card .cat-icon {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+        .cat-card .cat-count {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 4px;
+            font-weight: normal;
+        }
+
+        /* 搜尋列 */
+        .search-bar-container {
+            position: sticky;
+            top: 54px;
+            background: #0f172a;
+            padding: 10px 0;
+            z-index: 15;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #1e293b;
+            color: white;
+            font-size: 1.1rem;
+            box-sizing: border-box;
+        }
+
+        #search-input::placeholder {
+            color: #94a3b8;
+        }
+
+        /* 橫向分類滑動列 */
+        .category-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            position: sticky;
+            top: 115px;
+            background: #0f172a;
+            z-index: 10;
+            scroll-behavior: smooth;
+            align-items: center;
+        }
+
+        .category-scroll::-webkit-scrollbar {
+            height: 4px;
+        }
+        .category-scroll::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        .back-tab {
+            white-space: nowrap;
+            padding: 10px 16px;
+            background: #334155;
+            color: #f8fafc;
+            border: 1px solid #475569;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .back-tab:active {
+            background: #475569;
+        }
+
+        .cat-tab {
+            white-space: nowrap;
+            padding: 10px 20px;
+            background: #1e293b;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .cat-tab.active {
+            background: #0ea5e9;
+            color: white;
+            border-color: #0ea5e9;
+        }
+
+        /* 高密度餐點網格 (自動填滿空間) */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 10px;
+        }
+
+        .card {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 15px 5px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 80px;
+        }
+        .card:active {
+            background: #334155;
+        }
+        .card-id {
+            font-size: 0.8rem;
+            color: #38bdf8;
+            margin-bottom: 3px;
+            display: block;
+        }
+
+        /* 底部彈出選單 */
+        .bottom-sheet-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            z-index: 30;
+        }
+
+        .bottom-sheet {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            transition: bottom 0.3s ease-out;
+            z-index: 31;
+            box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .bottom-sheet.show {
+            bottom: 0;
+        }
+        .bottom-sheet h3 {
+            margin-top: 0;
+            color: white;
+            text-align: center;
+        }
+
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #334155;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* 備註按鈕 */
+        .fab-note {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #f59e0b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 1.8rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 12px;
+            background: #0f172a;
+            color: white;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            resize: none;
+            margin-bottom: 10px;
+        }
+
+        /* 列表樣式 */
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1e293b;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            cursor: pointer;
+        }
+
+        .delete-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .print-btn {
+            width: 100%;
+            padding: 15px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
+        .clear-btn {
+            width: 100%;
+            padding: 12px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
+        .history-detail {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #475569;
+            font-size: 0.95rem;
+            color: #cbd5e1;
+        }
+
+        .history-detail.show {
+            display: block;
+        }
+
+        .order-note-display {
+            background: #334155;
+            padding: 8px;
+            border-radius: 5px;
+            margin-top: 8px;
+            color: #fcd34d;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #0f172a;
+            color: white;
+            border: 1px solid #475569;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        .add-btn {
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            border-radius: 5px;
+            width: 100%;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .manage-cat-box {
+            background: #1e293b;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .manage-cat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #38bdf8;
+            margin-bottom: 10px;
+        }
+
+        .manage-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-top: 1px dashed #475569;
+            margin-left: 15px;
+            font-size: 0.95rem;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+
+        hr {
+            border-color: #334155;
+            margin: 20px 0;
+        }
+    </style>
 </head>
 <body>
 
-  <header>
-    <h1 id="app-title" onclick="window.switchView('menuView')">🏠 點餐</h1>
-    <div class="header-btns">
-      <button class="icon-btn" onclick="window.switchView('editView')">編輯</button>
-      <button class="icon-btn" onclick="window.switchView('historyView')">歷史</button>
-      <button class="icon-btn" onclick="window.switchView('cartView')">
-        訂單 <span class="badge" id="cart-badge">0</span>
-      </button>
+    <header>
+        <h1 id="app-title" onclick="window.switchView('categoryView')">🏠 菜單</h1>
+        <div class="header-btns">
+            <button class="icon-btn" onclick="window.switchView('editView')">編輯</button>
+            <button class="icon-btn" onclick="window.switchView('historyView')">歷史</button>
+            <button class="icon-btn" onclick="window.switchView('cartView')">
+                訂單 <span class="badge" id="cart-badge">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 分類總覽頁面 -->
+    <div id="categoryView" class="container active-view">
+        <div class="category-grid" id="category-grid"></div>
     </div>
-  </header>
 
-  <div id="menuView" class="container active-view">
-    <div class="search-bar-container">
-      <input type="search" id="search-input" placeholder="🔍 輸入編號或名稱 (例如: 101, 蝦)">
+    <!-- 餐點列表頁面 (搜尋 + 橫向分類 + 網格) -->
+    <div id="menuView" class="container">
+        <div class="search-bar-container">
+            <input type="search" id="search-input" placeholder="🔍 輸入編號或名稱 (例如: 101, 蝦)">
+        </div>
+
+        <div class="category-scroll" id="category-tabs">
+            <!-- 返回分類總覽的 tab 會動態插入在最前面 -->
+        </div>
+
+        <div class="grid" id="item-grid"></div>
     </div>
-    
-    <div class="category-scroll" id="category-tabs">
-      </div>
 
-    <div class="grid" id="item-grid">
-      </div>
-  </div>
+    <!-- 購物車頁面 -->
+    <div id="cartView" class="container" style="padding-top: 20px;">
+        <button class="print-btn" onclick="window.printAndCompleteOrder()">🖨️ 列印並完成訂單</button>
+        <button class="clear-btn" onclick="window.clearCart()">🗑️ 清空所有訂單</button>
+        <h2 style="margin-top:0;">目前訂單</h2>
+        <div id="cart-list"></div>
+    </div>
 
-  <div id="cartView" class="container" style="padding-top: 20px;">
-    <button class="print-btn" onclick="window.printAndCompleteOrder()">🖨️ 列印並完成訂單</button>
-    <button class="clear-btn" onclick="window.clearCart()">🗑️ 清空所有訂單</button>
-    <h2 style="margin-top:0;">目前訂單</h2>
-    <div id="cart-list"></div>
-  </div>
+    <!-- 歷史訂單頁面 -->
+    <div id="historyView" class="container" style="padding-top: 20px;">
+        <h2>歷史訂單紀錄</h2>
+        <div id="history-list"></div>
+    </div>
 
-  <div id="historyView" class="container" style="padding-top: 20px;">
-    <h2>歷史訂單紀錄</h2>
-    <div id="history-list"></div>
-  </div>
+    <!-- 編輯菜單頁面 -->
+    <div id="editView" class="container" style="padding-top: 20px;">
+        <h2>新增分類</h2>
+        <input type="text" id="new-cat-name" placeholder="分類名稱 (例: 飲料)">
+        <button class="add-btn" onclick="window.addCategory()">新增分類</button>
+        <hr>
 
-  <div id="editView" class="container" style="padding-top: 20px;">
-    <h2>新增分類</h2>
-    <input type="text" id="new-cat-name" placeholder="分類名稱 (例: 飲料)">
-    <button class="add-btn" onclick="window.addCategory()">新增分類</button>
-    <hr>
-    
-    <h2>新增餐點至分類</h2>
-    <select id="select-cat"></select>
-    <input type="text" id="new-item-id" placeholder="餐點編號 (例: D01)">
-    <input type="text" id="new-item-name" placeholder="餐點名稱 (例: 可樂)">
-    <input type="text" id="new-item-options" placeholder="選項 (用逗號分隔, 例: 雞肉,豬肉)">
-    <button class="add-btn" onclick="window.addItem()">新增餐點</button>
-    <hr>
+        <h2>新增餐點至分類</h2>
+        <select id="select-cat"></select>
+        <input type="text" id="new-item-id" placeholder="餐點編號 (例: D01)">
+        <input type="text" id="new-item-name" placeholder="餐點名稱 (例: 可樂)">
+        <input type="text" id="new-item-options" placeholder="選項 (用逗號分隔, 例: 雞肉,豬肉)">
+        <button class="add-btn" onclick="window.addItem()">新增餐點</button>
+        <hr>
 
-    <h2>管理現有菜單</h2>
-    <div id="manage-menu-list"></div>
-  </div>
+        <h2>管理現有菜單</h2>
+        <div id="manage-menu-list"></div>
+    </div>
 
-  <button class="fab-note" onclick="window.openNoteSheet()">📝</button>
+    <!-- 備註按鈕 -->
+    <button class="fab-note" onclick="window.openNoteSheet()">📝</button>
 
-  <div class="bottom-sheet-overlay" id="overlay" onclick="window.closeSheets()"></div>
-  <div class="bottom-sheet" id="bottom-sheet">
-    <h3 id="option-title">選擇選項</h3>
-    <div id="option-list"></div>
-    <button class="option-btn" style="background: #ef4444;" onclick="window.closeSheets()">取消</button>
-  </div>
+    <!-- 選項彈出選單 -->
+    <div class="bottom-sheet-overlay" id="overlay" onclick="window.closeSheets()"></div>
+    <div class="bottom-sheet" id="bottom-sheet">
+        <h3 id="option-title">選擇選項</h3>
+        <div id="option-list"></div>
+        <button class="option-btn" style="background: #ef4444;" onclick="window.closeSheets()">取消</button>
+    </div>
 
-  <div class="bottom-sheet" id="note-sheet">
-    <h3>整筆訂單備註</h3>
-    <textarea id="order-note-input" placeholder="請輸入顧客特殊要求 (例如：不要蔥、少冰...)"></textarea>
-    <button class="option-btn" style="background: #10b981;" onclick="window.saveNote()">儲存備註</button>
-  </div>
+    <!-- 備註彈出選單 -->
+    <div class="bottom-sheet" id="note-sheet">
+        <h3>整筆訂單備註</h3>
+        <textarea id="order-note-input" placeholder="請輸入顧客特殊要求 (例如：不要蔥、少冰...)"></textarea>
+        <button class="option-btn" style="background: #10b981;" onclick="window.saveNote()">儲存備註</button>
+    </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import {
+            getFirestore,
+            doc,
+            setDoc,
+            getDoc,
+            collection,
+            addDoc,
+            query,
+            orderBy,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyD6p84dpQqyrE62b3G9aubiI7FpDBQPQag",
-      authDomain: "thaifungmei.firebaseapp.com",
-      projectId: "thaifungmei",
-      storageBucket: "thaifungmei.firebasestorage.app",
-      messagingSenderId: "624625201929",
-      appId: "1:624625201929:web:75c9a30e5033aee4df99d8"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // 這裡放入我們上一個步驟整理的巨大菜單
-    const defaultMenu = [
-      {
-        id: 'c1', name: '小食 BBQ', items: [
-          { id: '101', name: '青檸燒牛柳', price: 98, options: [] },
-          { id: '102', name: '燒牛柳', price: 98, options: [] },
-          { id: '104', name: '炸蝦餅', price: 68, options: [] },
-          { id: '105', name: '炸魚餅', price: 58, options: [] },
-          { id: '106', name: '炸雞軟骨', price: 58, options: [] },
-          { id: '112', name: '沙嗲串燒', price: 88, options: ['豬', '牛', '雞', '雞腎'] }
-        ]
-      },
-      // ...為節省空間，請把你剛剛的完整 defaultMenu 貼在這裡覆蓋...
-    ];
-
-    let menuData = [];
-    let cart = [];
-    let currentCategoryIndex = 0; // 預設顯示第一個分類
-    let currentOrderNote = ""; 
-
-    async function loadData() {
-      try {
-        const docRef = doc(db, "restaurant", "menu");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          menuData = docSnap.data().categories;
-        } else {
-          menuData = defaultMenu;
-          await saveMenuToFirebase();
-        }
-        renderMenuTabs();
-        renderItems(currentCategoryIndex);
-      } catch (e) {
-        console.error(e);
-        menuData = defaultMenu;
-        renderMenuTabs();
-        renderItems(currentCategoryIndex);
-      }
-    }
-
-    async function saveMenuToFirebase() {
-      try {
-        await setDoc(doc(db, "restaurant", "menu"), { categories: menuData });
-        renderMenuTabs();
-        if (document.getElementById('search-input').value === '') {
-            renderItems(currentCategoryIndex);
-        }
-        if(document.getElementById('editView').classList.contains('active-view')) {
-          renderManageMenu(); 
-        }
-      } catch (e) { console.error("Save error:", e); }
-    }
-
-    window.switchView = function(viewId) {
-      document.querySelectorAll('.container').forEach(el => el.classList.remove('active-view'));
-      document.getElementById(viewId).classList.add('active-view');
-      
-      if (viewId === 'cartView') renderCart();
-      if (viewId === 'historyView') loadHistory();
-      if (viewId === 'editView') {
-        populateEditDropdown();
-        renderManageMenu();
-      }
-      if (viewId === 'menuView') {
-        document.getElementById('search-input').value = '';
-        document.getElementById('category-tabs').style.display = 'flex';
-        renderMenuTabs();
-        renderItems(currentCategoryIndex);
-      }
-    };
-
-    // --- 新的 UI 渲染邏輯 ---
-    
-    function renderMenuTabs() {
-      const tabsContainer = document.getElementById('category-tabs');
-      tabsContainer.innerHTML = '';
-      menuData.forEach((cat, index) => {
-        const btn = document.createElement('div');
-        btn.className = `cat-tab ${index === currentCategoryIndex ? 'active' : ''}`;
-        btn.innerText = cat.name;
-        btn.onclick = () => {
-          document.getElementById('search-input').value = ''; // 點擊分類時清空搜尋
-          document.getElementById('category-tabs').style.display = 'flex';
-          currentCategoryIndex = index;
-          renderMenuTabs();
-          renderItems(index);
+        const firebaseConfig = {
+            apiKey: "AIzaSyD6p84dpQqyrE62b3G9aubiI7FpDBQPQag",
+            authDomain: "thaifungmei.firebaseapp.com",
+            projectId: "thaifungmei",
+            storageBucket: "thaifungmei.firebasestorage.app",
+            messagingSenderId: "624625201929",
+            appId: "1:624625201929:web:75c9a30e5033aee4df99d8"
         };
-        tabsContainer.appendChild(btn);
-      });
-      populateEditDropdown();
-    }
 
-    function renderItems(catIndex) {
-      const grid = document.getElementById('item-grid');
-      grid.innerHTML = '';
-      if (!menuData[catIndex]) return;
-      
-      const items = menuData[catIndex].items;
-      drawGridItems(items, grid);
-    }
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-    function drawGridItems(items, gridElement) {
-      gridElement.innerHTML = '';
-      if(items.length === 0) {
-        gridElement.innerHTML = '<p style="color:#94a3b8; grid-column: 1 / -1;">沒有找到餐點</p>';
-        return;
-      }
-      items.forEach(item => {
-        const itemCountInCart = cart.filter(c => c.id === item.id).length;
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.innerHTML = `<span class="card-id">${item.id}</span>${item.name}`;
-        if (itemCountInCart > 0) div.innerHTML += `<div class="item-badge">${itemCountInCart}</div>`;
-        div.onclick = () => handleItemClick(item);
-        gridElement.appendChild(div);
-      });
-    }
+        // 預設菜單（若 Firestore 尚無資料時使用）
+        const defaultMenu = [{
+            id: 'c1',
+            name: '小食 BBQ',
+            items: [
+                { id: '101', name: '青檸燒牛柳', options: [] },
+                { id: '102', name: '燒牛柳', options: [] },
+                { id: '104', name: '炸蝦餅', options: [] },
+                { id: '105', name: '炸魚餅', options: [] },
+                { id: '106', name: '炸雞軟骨', options: [] },
+                { id: '112', name: '沙嗲串燒', options: ['豬', '牛', '雞', '雞腎'] }
+            ]
+        }, {
+            id: 'c2',
+            name: '主食',
+            items: [
+                { id: 'M01', name: '炒飯', options: ['雞肉', '豬肉', '牛肉'] },
+                { id: 'M02', name: '炒河粉', options: ['雞肉', '豬肉', '牛肉'] },
+                { id: 'M03', name: '咖哩飯', options: [] }
+            ]
+        }, {
+            id: 'c3',
+            name: '飲料',
+            items: [
+                { id: 'D01', name: '可樂', options: [] },
+                { id: 'D02', name: '檸檬茶', options: ['少冰', '正常冰', '走冰'] },
+                { id: 'D03', name: '奶茶', options: ['熱', '凍'] }
+            ]
+        }];
 
-    // --- 實作搜尋功能 ---
-    document.getElementById('search-input').addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase().trim();
-      const tabsContainer = document.getElementById('category-tabs');
-      const grid = document.getElementById('item-grid');
+        let menuData = [];
+        let cart = [];
+        let currentCategoryIndex = null; // 目前正在瀏覽的分類索引（menuView 中使用）
+        let currentOrderNote = "";
 
-      if (query !== '') {
-        tabsContainer.style.display = 'none'; // 搜尋時隱藏分類列
-        let searchResults = [];
-        menuData.forEach(cat => {
-          cat.items.forEach(item => {
-            if (item.id.toLowerCase().includes(query) || item.name.toLowerCase().includes(query)) {
-              searchResults.push(item);
+        // ========== 資料載入與儲存 ==========
+        async function loadData() {
+            try {
+                const docRef = doc(db, "restaurant", "menu");
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    menuData = docSnap.data().categories;
+                } else {
+                    menuData = defaultMenu;
+                    await saveMenuToFirebase();
+                }
+                renderCategories();
+                renderMenuTabs();
+                if (currentCategoryIndex !== null && document.getElementById('menuView').classList.contains(
+                        'active-view')) {
+                    renderItems(currentCategoryIndex);
+                }
+            } catch (e) {
+                console.error(e);
+                menuData = defaultMenu;
+                renderCategories();
+                renderMenuTabs();
             }
-          });
-        });
-        drawGridItems(searchResults, grid);
-      } else {
-        tabsContainer.style.display = 'flex'; // 清空時顯示分類列
-        renderItems(currentCategoryIndex);
-      }
-    });
-
-    // --- 購物車與其他邏輯維持不變 ---
-    
-    function handleItemClick(item) {
-      if (item.options && item.options.length > 0) {
-        document.getElementById('option-title').innerText = `${item.name} - 選擇選項`;
-        const list = document.getElementById('option-list');
-        list.innerHTML = '';
-        item.options.forEach(opt => {
-          const btn = document.createElement('button');
-          btn.className = 'option-btn';
-          btn.innerText = opt;
-          btn.onclick = () => { addToCart(item, opt); window.closeSheets(); };
-          list.appendChild(btn);
-        });
-        document.getElementById('overlay').style.display = 'block';
-        setTimeout(() => document.getElementById('bottom-sheet').classList.add('show'), 10);
-      } else {
-        addToCart(item, null);
-      }
-    }
-
-    window.openNoteSheet = function() {
-      document.getElementById('order-note-input').value = currentOrderNote;
-      document.getElementById('overlay').style.display = 'block';
-      setTimeout(() => document.getElementById('note-sheet').classList.add('show'), 10);
-    };
-
-    window.saveNote = function() {
-      currentOrderNote = document.getElementById('order-note-input').value;
-      window.closeSheets();
-      if(document.getElementById('cartView').classList.contains('active-view')) renderCart();
-    };
-
-    window.closeSheets = function() {
-      document.getElementById('bottom-sheet').classList.remove('show');
-      document.getElementById('note-sheet').classList.remove('show');
-      setTimeout(() => document.getElementById('overlay').style.display = 'none', 300);
-    };
-
-    function refreshCurrentGrid() {
-      const query = document.getElementById('search-input').value.toLowerCase().trim();
-      if (query !== '') {
-        // Trigger the input event to re-search and redraw
-        document.getElementById('search-input').dispatchEvent(new Event('input'));
-      } else {
-        renderItems(currentCategoryIndex);
-      }
-    }
-
-    function addToCart(item, option) {
-      cart.push({ cartId: Date.now(), id: item.id, name: item.name, option: option });
-      updateBadge();
-      refreshCurrentGrid();
-    }
-
-    window.removeFromCart = function(cartId, event) {
-      if(event) event.stopPropagation(); 
-      cart = cart.filter(item => item.cartId !== cartId);
-      updateBadge();
-      renderCart();
-      refreshCurrentGrid();
-    };
-
-    window.clearCart = function() {
-      if (cart.length === 0) return;
-      if (confirm("確定要清空目前所有訂單與備註嗎？")) {
-        cart = [];
-        currentOrderNote = "";
-        updateBadge();
-        renderCart();
-        refreshCurrentGrid();
-      }
-    };
-
-    function updateBadge() {
-      const badge = document.getElementById('cart-badge');
-      badge.innerText = cart.length;
-      badge.style.display = cart.length > 0 ? 'block' : 'none';
-    }
-
-    function renderCart() {
-      const list = document.getElementById('cart-list');
-      list.innerHTML = '';
-      
-      if (currentOrderNote) {
-        list.innerHTML += `<div class="order-note-display" style="margin-bottom: 15px;">📝 備註：${currentOrderNote}</div>`;
-      }
-
-      if (cart.length === 0) {
-        list.innerHTML += '<p style="color:#94a3b8;">尚未選擇任何餐點。</p>';
-        return;
-      }
-      
-      cart.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'list-item';
-        const optText = item.option ? ` (${item.option})` : '';
-        div.innerHTML = `
-          <div>
-            <span style="color:#38bdf8;">${item.id}</span> - <strong>${item.name}</strong><br>
-            <small style="color:#94a3b8;">數量: 1 ${optText}</small>
-          </div>
-          <button class="delete-btn" onclick="window.removeFromCart(${item.cartId}, event)">刪除</button>
-        `;
-        list.appendChild(div);
-      });
-    }
-
-    window.printAndCompleteOrder = async function() {
-      if(cart.length === 0) return alert("訂單是空的！");
-      
-      const orderId = Math.random().toString(36).substring(2, 6).toUpperCase();
-      
-      let printText = `=== 餐廳訂單 #${orderId} ===\n時間: ${new Date().toLocaleTimeString()}\n\n`;
-      cart.forEach(item => {
-        const optText = item.option ? ` (${item.option})` : '';
-        printText += `[${item.id}] ${item.name}${optText} x 1\n`;
-      });
-      if (currentOrderNote) printText += `\n備註: ${currentOrderNote}\n`;
-      printText += "\n=====================";
-      
-      alert(printText); 
-      
-      try {
-        await addDoc(collection(db, "orders"), {
-          orderId: orderId,
-          items: cart,
-          note: currentOrderNote,
-          timestamp: new Date().toISOString()
-        });
-      } catch(e) { console.error("寫入歷史訂單失敗", e); }
-
-      cart = [];
-      currentOrderNote = "";
-      updateBadge();
-      window.switchView('menuView');
-    };
-
-    async function loadHistory() {
-      const list = document.getElementById('history-list');
-      list.innerHTML = '<p>載入中...</p>';
-      try {
-        const q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
-        const querySnapshot = await getDocs(q);
-        list.innerHTML = '';
-        if(querySnapshot.empty) {
-          list.innerHTML = '<p style="color:#94a3b8;">目前沒有歷史訂單。</p>';
-          return;
         }
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          const time = new Date(data.timestamp).toLocaleString();
-          
-          const div = document.createElement('div');
-          div.className = 'list-item';
-          div.style.display = 'block';
-          
-          div.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <strong style="color:#38bdf8; font-size:1.1rem;">單號 #${data.orderId || '舊單'}</strong>
-              <small style="color:#94a3b8;">${time}</small>
-            </div>
-          `;
-          
-          const detailDiv = document.createElement('div');
-          detailDiv.className = 'history-detail';
-          
-          data.items.forEach(item => {
-            const optText = item.option ? ` (${item.option})` : '';
-            detailDiv.innerHTML += `<div style="margin-bottom:4px;">- [${item.id}] ${item.name}${optText}</div>`;
-          });
-          
-          if (data.note) {
-            detailDiv.innerHTML += `<div class="order-note-display">📝 ${data.note}</div>`;
-          }
-          
-          div.appendChild(detailDiv);
-          div.onclick = () => detailDiv.classList.toggle('show');
-          list.appendChild(div);
+
+        async function saveMenuToFirebase() {
+            try {
+                await setDoc(doc(db, "restaurant", "menu"), { categories: menuData });
+                renderCategories();
+                renderMenuTabs();
+                if (currentCategoryIndex !== null && document.getElementById('menuView').classList.contains(
+                        'active-view')) {
+                    renderItems(currentCategoryIndex);
+                }
+                if (document.getElementById('editView').classList.contains('active-view')) {
+                    renderManageMenu();
+                }
+            } catch (e) {
+                console.error("Save error:", e);
+            }
+        }
+
+        // ========== 視圖切換 ==========
+        window.switchView = function(viewId) {
+            document.querySelectorAll('.container').forEach(el => el.classList.remove('active-view'));
+            document.getElementById(viewId).classList.add('active-view');
+
+            if (viewId === 'cartView') renderCart();
+            if (viewId === 'historyView') loadHistory();
+            if (viewId === 'editView') {
+                populateEditDropdown();
+                renderManageMenu();
+            }
+            if (viewId === 'categoryView') {
+                document.getElementById('app-title').innerText = '🏠 菜單';
+                currentCategoryIndex = null;
+                renderCategories();
+            }
+            if (viewId === 'menuView') {
+                // 若還沒有選擇分類（不應發生，但做 fallback），設為 0
+                if (currentCategoryIndex === null) {
+                    currentCategoryIndex = 0;
+                }
+                document.getElementById('search-input').value = '';
+                document.getElementById('category-tabs').style.display = 'flex';
+                renderMenuTabs();
+                renderItems(currentCategoryIndex);
+                updateMenuHeaderTitle();
+            }
+        };
+
+        function updateMenuHeaderTitle() {
+            if (currentCategoryIndex !== null && menuData[currentCategoryIndex]) {
+                document.getElementById('app-title').innerText = '🏠 ' + menuData[currentCategoryIndex].name;
+            } else {
+                document.getElementById('app-title').innerText = '🏠 點餐';
+            }
+        }
+
+        // ========== 分類總覽頁面 (categoryView) ==========
+        function renderCategories() {
+            const grid = document.getElementById('category-grid');
+            grid.innerHTML = '';
+
+            if (menuData.length === 0) {
+                grid.innerHTML =
+                    '<p style="color:#94a3b8; grid-column: 1 / -1; text-align:center;">尚無分類，請先至編輯頁面新增。</p>';
+                return;
+            }
+
+            // 表情符號對應表（根據分類名稱自動選一個圖示）
+            const iconOptions = ['🍽️', '🥘', '🍜', '🍖', '🥗', '🍰', '🍹', '☕', '🍵', '🧋', '🥩', '🍗', '🍤', '🍕', '🌮'];
+
+            menuData.forEach((cat, index) => {
+                const div = document.createElement('div');
+                div.className = 'cat-card';
+                const icon = iconOptions[index % iconOptions.length];
+                const itemCount = cat.items ? cat.items.length : 0;
+                div.innerHTML = `
+                    <span class="cat-icon">${icon}</span>
+                    ${cat.name}
+                    <span class="cat-count">${itemCount} 項餐點</span>
+                `;
+                div.onclick = () => window.openCategoryFromOverview(index);
+                grid.appendChild(div);
+            });
+
+            populateEditDropdown();
+        }
+
+        // 從分類總覽點擊分類，進入 menuView
+        window.openCategoryFromOverview = function(index) {
+            currentCategoryIndex = index;
+            document.getElementById('search-input').value = '';
+            document.getElementById('category-tabs').style.display = 'flex';
+            renderMenuTabs();
+            renderItems(index);
+            updateMenuHeaderTitle();
+            // 切換視圖
+            document.querySelectorAll('.container').forEach(el => el.classList.remove('active-view'));
+            document.getElementById('menuView').classList.add('active-view');
+        };
+
+        // ========== 餐點列表頁面 (menuView) ==========
+        function renderMenuTabs() {
+            const tabsContainer = document.getElementById('category-tabs');
+            tabsContainer.innerHTML = '';
+
+            // 返回分類總覽的按鈕（固定在分類列表最前方）
+            const backBtn = document.createElement('div');
+            backBtn.className = 'back-tab';
+            backBtn.innerHTML = '← 分類';
+            backBtn.onclick = () => window.switchView('categoryView');
+            tabsContainer.appendChild(backBtn);
+
+            // 各分類 tab
+            menuData.forEach((cat, index) => {
+                const btn = document.createElement('div');
+                btn.className = `cat-tab ${index === currentCategoryIndex ? 'active' : ''}`;
+                btn.innerText = cat.name;
+                btn.onclick = () => {
+                    document.getElementById('search-input').value = '';
+                    document.getElementById('category-tabs').style.display = 'flex';
+                    currentCategoryIndex = index;
+                    renderMenuTabs();
+                    renderItems(index);
+                    updateMenuHeaderTitle();
+                };
+                tabsContainer.appendChild(btn);
+            });
+
+            populateEditDropdown();
+        }
+
+        function renderItems(catIndex) {
+            const grid = document.getElementById('item-grid');
+            grid.innerHTML = '';
+            if (!menuData[catIndex]) return;
+
+            const items = menuData[catIndex].items;
+            drawGridItems(items, grid);
+        }
+
+        function drawGridItems(items, gridElement) {
+            gridElement.innerHTML = '';
+            if (items.length === 0) {
+                gridElement.innerHTML =
+                '<p style="color:#94a3b8; grid-column: 1 / -1;">此分類目前沒有餐點。</p>';
+                return;
+            }
+            items.forEach(item => {
+                const itemCountInCart = cart.filter(c => c.id === item.id).length;
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `<span class="card-id">${item.id}</span>${item.name}`;
+                if (itemCountInCart > 0) div.innerHTML +=
+                    `<div class="item-badge">${itemCountInCart}</div>`;
+                div.onclick = () => handleItemClick(item);
+                gridElement.appendChild(div);
+            });
+        }
+
+        // ========== 搜尋功能 ==========
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const tabsContainer = document.getElementById('category-tabs');
+            const grid = document.getElementById('item-grid');
+
+            if (query !== '') {
+                tabsContainer.style.display = 'none';
+                let searchResults = [];
+                menuData.forEach(cat => {
+                    cat.items.forEach(item => {
+                        if (item.id.toLowerCase().includes(query) || item.name.toLowerCase()
+                            .includes(query)) {
+                            searchResults.push(item);
+                        }
+                    });
+                });
+                drawGridItems(searchResults, grid);
+            } else {
+                tabsContainer.style.display = 'flex';
+                if (currentCategoryIndex !== null) {
+                    renderItems(currentCategoryIndex);
+                } else if (menuData.length > 0) {
+                    currentCategoryIndex = 0;
+                    renderItems(0);
+                    renderMenuTabs();
+                }
+            }
         });
-      } catch (e) {
-        console.error(e);
-        list.innerHTML = '<p>讀取失敗，請確認 Firebase 權限設定。</p>';
-      }
-    }
 
-    function populateEditDropdown() {
-      const select = document.getElementById('select-cat');
-      select.innerHTML = '';
-      menuData.forEach((cat, index) => {
-        const opt = document.createElement('option');
-        opt.value = index;
-        opt.innerText = cat.name;
-        select.appendChild(opt);
-      });
-    }
+        // ========== 餐點點擊處理 ==========
+        function handleItemClick(item) {
+            if (item.options && item.options.length > 0) {
+                document.getElementById('option-title').innerText = `${item.name} - 選擇選項`;
+                const list = document.getElementById('option-list');
+                list.innerHTML = '';
+                item.options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerText = opt;
+                    btn.onclick = () => {
+                        addToCart(item, opt);
+                        window.closeSheets();
+                    };
+                    list.appendChild(btn);
+                });
+                document.getElementById('overlay').style.display = 'block';
+                setTimeout(() => document.getElementById('bottom-sheet').classList.add('show'), 10);
+            } else {
+                addToCart(item, null);
+            }
+        }
 
-    window.addCategory = function() {
-      const name = document.getElementById('new-cat-name').value;
-      if (!name) return alert('請輸入分類名稱');
-      menuData.push({ id: 'c'+Date.now(), name: name, items: [] });
-      document.getElementById('new-cat-name').value = '';
-      saveMenuToFirebase();
-    };
+        // ========== 備註功能 ==========
+        window.openNoteSheet = function() {
+            document.getElementById('order-note-input').value = currentOrderNote;
+            document.getElementById('overlay').style.display = 'block';
+            setTimeout(() => document.getElementById('note-sheet').classList.add('show'), 10);
+        };
 
-    window.addItem = function() {
-      const catIndex = document.getElementById('select-cat').value;
-      const id = document.getElementById('new-item-id').value;
-      const name = document.getElementById('new-item-name').value;
-      const optionsRaw = document.getElementById('new-item-options').value;
-      if (!id || !name) return alert('請輸入編號與名稱');
-      let optionsArray = optionsRaw ? optionsRaw.split(',').map(s => s.trim()) : [];
-      menuData[catIndex].items.push({ id: id, name: name, options: optionsArray });
-      document.getElementById('new-item-id').value = '';
-      document.getElementById('new-item-name').value = '';
-      document.getElementById('new-item-options').value = '';
-      saveMenuToFirebase();
-    };
+        window.saveNote = function() {
+            currentOrderNote = document.getElementById('order-note-input').value;
+            window.closeSheets();
+            if (document.getElementById('cartView').classList.contains('active-view')) renderCart();
+        };
 
-    function renderManageMenu() {
-      const container = document.getElementById('manage-menu-list');
-      container.innerHTML = '';
-      
-      if (menuData.length === 0) {
-        container.innerHTML = '<p style="color:#94a3b8;">目前沒有菜單資料。</p>';
-        return;
-      }
+        window.closeSheets = function() {
+            document.getElementById('bottom-sheet').classList.remove('show');
+            document.getElementById('note-sheet').classList.remove('show');
+            setTimeout(() => document.getElementById('overlay').style.display = 'none', 300);
+        };
 
-      menuData.forEach((cat, catIndex) => {
-        let html = `
-          <div class="manage-cat-box">
-            <div class="manage-cat-header">
-              <span>📁 ${cat.name}</span>
-              <div>
-                <button class="action-btn" onclick="window.renameCategory(${catIndex})">✏️</button>
-                <button class="action-btn" onclick="window.deleteCategory(${catIndex})">🗑️</button>
-              </div>
-            </div>
-        `;
-        
-        cat.items.forEach((item, itemIndex) => {
-          html += `
-            <div class="manage-item-row">
-              <span>[${item.id}] ${item.name}</span>
-              <div>
-                <button class="action-btn" onclick="window.renameItem(${catIndex}, ${itemIndex})">✏️</button>
-                <button class="action-btn" onclick="window.deleteItem(${catIndex}, ${itemIndex})">🗑️</button>
-              </div>
-            </div>
-          `;
-        });
-        
-        html += `</div>`;
-        container.innerHTML += html;
-      });
-    }
+        // ========== 購物車功能 ==========
+        function refreshCurrentGrid() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            const menuViewActive = document.getElementById('menuView').classList.contains('active-view');
+            if (!menuViewActive) return;
+            if (query !== '') {
+                document.getElementById('search-input').dispatchEvent(new Event('input'));
+            } else if (currentCategoryIndex !== null) {
+                renderItems(currentCategoryIndex);
+            }
+        }
 
-    window.renameCategory = function(index) {
-      const newName = prompt("請輸入新的分類名稱：", menuData[index].name);
-      if (newName && newName.trim() !== "") {
-        menuData[index].name = newName.trim();
-        saveMenuToFirebase();
-      }
-    };
+        function addToCart(item, option) {
+            cart.push({ cartId: Date.now(), id: item.id, name: item.name, option: option });
+            updateBadge();
+            refreshCurrentGrid();
+        }
 
-    window.deleteCategory = function(index) {
-      if (confirm(`確定要刪除整個【${menuData[index].name}】分類嗎？\n(裡面的餐點會一併被刪除！)`)) {
-        menuData.splice(index, 1);
-        saveMenuToFirebase();
-      }
-    };
+        window.removeFromCart = function(cartId, event) {
+            if (event) event.stopPropagation();
+            cart = cart.filter(item => item.cartId !== cartId);
+            updateBadge();
+            renderCart();
+            refreshCurrentGrid();
+        };
 
-    window.renameItem = function(catIndex, itemIndex) {
-      const item = menuData[catIndex].items[itemIndex];
-      const newName = prompt(`請輸入新的餐點名稱 (原本: ${item.name})：`, item.name);
-      if (newName && newName.trim() !== "") {
-        menuData[catIndex].items[itemIndex].name = newName.trim();
-        saveMenuToFirebase();
-      }
-    };
+        window.clearCart = function() {
+            if (cart.length === 0) return;
+            if (confirm("確定要清空目前所有訂單與備註嗎？")) {
+                cart = [];
+                currentOrderNote = "";
+                updateBadge();
+                renderCart();
+                refreshCurrentGrid();
+            }
+        };
 
-    window.deleteItem = function(catIndex, itemIndex) {
-      const item = menuData[catIndex].items[itemIndex];
-      if (confirm(`確定要刪除餐點【${item.name}】嗎？`)) {
-        menuData[catIndex].items.splice(itemIndex, 1);
-        saveMenuToFirebase();
-      }
-    };
+        function updateBadge() {
+            const badge = document.getElementById('cart-badge');
+            badge.innerText = cart.length;
+            badge.style.display = cart.length > 0 ? 'block' : 'none';
+        }
 
-    loadData();
-  </script>
+        function renderCart() {
+            const list = document.getElementById('cart-list');
+            list.innerHTML = '';
+
+            if (currentOrderNote) {
+                list.innerHTML +=
+                    `<div class="order-note-display" style="margin-bottom: 15px;">📝 備註：${currentOrderNote}</div>`;
+            }
+
+            if (cart.length === 0) {
+                list.innerHTML += '<p style="color:#94a3b8;">尚未選擇任何餐點。</p>';
+                return;
+            }
+
+            cart.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                const optText = item.option ? ` (${item.option})` : '';
+                div.innerHTML = `
+                    <div>
+                        <span style="color:#38bdf8;">${item.id}</span> - <strong>${item.name}</strong><br>
+                        <small style="color:#94a3b8;">數量: 1 ${optText}</small>
+                    </div>
+                    <button class="delete-btn" onclick="window.removeFromCart(${item.cartId}, event)">刪除</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // ========== 列印與完成訂單 ==========
+        window.printAndCompleteOrder = async function() {
+            if (cart.length === 0) return alert("訂單是空的！");
+
+            const orderId = Math.random().toString(36).substring(2, 6).toUpperCase();
+
+            let printText = `=== 餐廳訂單 #${orderId} ===\n時間: ${new Date().toLocaleTimeString()}\n\n`;
+            cart.forEach(item => {
+                const optText = item.option ? ` (${item.option})` : '';
+                printText += `[${item.id}] ${item.name}${optText} x 1\n`;
+            });
+            if (currentOrderNote) printText += `\n備註: ${currentOrderNote}\n`;
+            printText += "\n=====================";
+
+            alert(printText);
+
+            try {
+                await addDoc(collection(db, "orders"), {
+                    orderId: orderId,
+                    items: cart,
+                    note: currentOrderNote,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (e) {
+                console.error("寫入歷史訂單失敗", e);
+            }
+
+            cart = [];
+            currentOrderNote = "";
+            updateBadge();
+            window.switchView('categoryView');
+        };
+
+        // ========== 歷史訂單 ==========
+        async function loadHistory() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = '<p>載入中...</p>';
+            try {
+                const q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+                list.innerHTML = '';
+                if (querySnapshot.empty) {
+                    list.innerHTML = '<p style="color:#94a3b8;">目前沒有歷史訂單。</p>';
+                    return;
+                }
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const time = new Date(data.timestamp).toLocaleString();
+
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.style.display = 'block';
+
+                    div.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong style="color:#38bdf8; font-size:1.1rem;">單號 #${data.orderId || '舊單'}</strong>
+                            <small style="color:#94a3b8;">${time}</small>
+                        </div>
+                    `;
+
+                    const detailDiv = document.createElement('div');
+                    detailDiv.className = 'history-detail';
+
+                    data.items.forEach(item => {
+                        const optText = item.option ? ` (${item.option})` : '';
+                        detailDiv.innerHTML +=
+                            `<div style="margin-bottom:4px;">- [${item.id}] ${item.name}${optText}</div>`;
+                    });
+
+                    if (data.note) {
+                        detailDiv.innerHTML +=
+                        `<div class="order-note-display">📝 ${data.note}</div>`;
+                    }
+
+                    div.appendChild(detailDiv);
+                    div.onclick = () => detailDiv.classList.toggle('show');
+                    list.appendChild(div);
+                });
+            } catch (e) {
+                console.error(e);
+                list.innerHTML = '<p>讀取失敗，請確認 Firebase 權限設定。</p>';
+            }
+        }
+
+        // ========== 編輯菜單功能 ==========
+        function populateEditDropdown() {
+            const select = document.getElementById('select-cat');
+            select.innerHTML = '';
+            menuData.forEach((cat, index) => {
+                const opt = document.createElement('option');
+                opt.value = index;
+                opt.innerText = cat.name;
+                select.appendChild(opt);
+            });
+        }
+
+        window.addCategory = function() {
+            const name = document.getElementById('new-cat-name').value;
+            if (!name) return alert('請輸入分類名稱');
+            menuData.push({ id: 'c' + Date.now(), name: name, items: [] });
+            document.getElementById('new-cat-name').value = '';
+            saveMenuToFirebase();
+        };
+
+        window.addItem = function() {
+            const catIndex = document.getElementById('select-cat').value;
+            const id = document.getElementById('new-item-id').value;
+            const name = document.getElementById('new-item-name').value;
+            const optionsRaw = document.getElementById('new-item-options').value;
+            if (!id || !name) return alert('請輸入編號與名稱');
+            let optionsArray = optionsRaw ? optionsRaw.split(',').map(s => s.trim()) : [];
+            menuData[catIndex].items.push({ id: id, name: name, options: optionsArray });
+            document.getElementById('new-item-id').value = '';
+            document.getElementById('new-item-name').value = '';
+            document.getElementById('new-item-options').value = '';
+            saveMenuToFirebase();
+        };
+
+        function renderManageMenu() {
+            const container = document.getElementById('manage-menu-list');
+            container.innerHTML = '';
+
+            if (menuData.length === 0) {
+                container.innerHTML = '<p style="color:#94a3b8;">目前沒有菜單資料。</p>';
+                return;
+            }
+
+            menuData.forEach((cat, catIndex) => {
+                let html = `
+                    <div class="manage-cat-box">
+                        <div class="manage-cat-header">
+                            <span>📁 ${cat.name}</span>
+                            <div>
+                                <button class="action-btn" onclick="window.renameCategory(${catIndex})">✏️</button>
+                                <button class="action-btn" onclick="window.deleteCategory(${catIndex})">🗑️</button>
+                            </div>
+                        </div>
+                `;
+
+                cat.items.forEach((item, itemIndex) => {
+                    html += `
+                        <div class="manage-item-row">
+                            <span>[${item.id}] ${item.name}</span>
+                            <div>
+                                <button class="action-btn" onclick="window.renameItem(${catIndex}, ${itemIndex})">✏️</button>
+                                <button class="action-btn" onclick="window.deleteItem(${catIndex}, ${itemIndex})">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+                container.innerHTML += html;
+            });
+        }
+
+        window.renameCategory = function(index) {
+            const newName = prompt("請輸入新的分類名稱：", menuData[index].name);
+            if (newName && newName.trim() !== "") {
+                menuData[index].name = newName.trim();
+                saveMenuToFirebase();
+            }
+        };
+
+        window.deleteCategory = function(index) {
+            if (confirm(`確定要刪除整個【${menuData[index].name}】分類嗎？\n(裡面的餐點會一併被刪除！)`)) {
+                menuData.splice(index, 1);
+                if (currentCategoryIndex !== null && currentCategoryIndex >= menuData.length) {
+                    currentCategoryIndex = Math.max(0, menuData.length - 1);
+                }
+                saveMenuToFirebase();
+            }
+        };
+
+        window.renameItem = function(catIndex, itemIndex) {
+            const item = menuData[catIndex].items[itemIndex];
+            const newName = prompt(`請輸入新的餐點名稱 (原本: ${item.name})：`, item.name);
+            if (newName && newName.trim() !== "") {
+                menuData[catIndex].items[itemIndex].name = newName.trim();
+                saveMenuToFirebase();
+            }
+        };
+
+        window.deleteItem = function(catIndex, itemIndex) {
+            const item = menuData[catIndex].items[itemIndex];
+            if (confirm(`確定要刪除餐點【${item.name}】嗎？`)) {
+                menuData[catIndex].items.splice(itemIndex, 1);
+                saveMenuToFirebase();
+            }
+        };
+
+        // ========== 啟動 ==========
+        loadData();
+    </script>
 </body>
 </html>
